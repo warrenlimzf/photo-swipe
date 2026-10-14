@@ -22,9 +22,11 @@ struct AlbumRail: View {
             .padding(.vertical, 4)
             .animation(.spring(duration: 0.35, bounce: 0.3), value: model.state.shelf.map(\.id))
         }
-        // The name bubble pokes out to the left of the rail.
+        // The name bubble pokes out to the left of the rail, so clipping is off; the mask then
+        // clips top and bottom only, so a long rail never draws over the top bar or the buttons.
         .scrollClipDisabled()
         .frame(width: 50)
+        .mask { Rectangle().padding(.leading, -320) }
     }
 
     private func emojiButton(_ album: ShelfAlbum) -> some View {

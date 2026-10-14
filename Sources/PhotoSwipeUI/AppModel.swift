@@ -131,6 +131,8 @@ public final class AppModel {
             for id in shelfIDs {
                 guard let albumID = try await liveAlbumID(id) else { continue }
                 try await library.add(photo, toAlbum: albumID)
+                // A recreated album starts empty, so put this photo back in its count.
+                if !(albumMembers[id]?.contains(photo) ?? false) { albumMembers[id, default: []].insert(photo, at: 0) }
             }
         }
     }
@@ -152,6 +154,8 @@ public final class AppModel {
         if library.albumExists(album.albumID) { return album.albumID }
         let fresh = try await library.createAlbum(titled: album.title)
         apply { $0.setAlbumID(fresh, for: shelfID) }
+        // The old album's photos went with it; the count must not keep them.
+        albumMembers[shelfID] = []
         return fresh
     }
 
