@@ -1,7 +1,7 @@
 import SwiftUI
 import SwipeCore
 
-/// The emoji albums on the home screen: cover photo, name, how many photos. Then ＋ New album.
+/// The emoji albums on the home screen: the album's emoji, its name, how many photos. Then ＋ New album.
 struct AlbumsSection: View {
     let onOpen: (ShelfAlbum) -> Void
     let onNew: () -> Void
@@ -27,17 +27,11 @@ struct AlbumsSection: View {
     private func row(_ album: ShelfAlbum) -> some View {
         let count = model.albumMembers[album.id]?.count ?? 0
         return HStack(spacing: 14) {
-            Group {
-                if let cover = model.albumMembers[album.id]?.first {
-                    Tile(id: cover, side: 200)
-                } else {
-                    Theme.card.overlay { Text(album.emoji).font(.title2) }
-                }
-            }
-            .frame(width: 58, height: 58)
-            .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+            Text(album.emoji)
+                .font(.system(size: 40))
+                .frame(width: 58, height: 58)
             VStack(alignment: .leading, spacing: 3) {
-                Text(album.title)
+                Text(album.name)
                     .font(.title3.weight(.semibold))
                     .foregroundStyle(Theme.ink)
                     .lineLimit(1)

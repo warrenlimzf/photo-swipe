@@ -58,11 +58,11 @@
 **✅ This IS:**
 - 👉 **Swipe to sort.** Right keeps, left marks for deletion. There are buttons too.
 - ↩️ **Undo.** Step back as many swipes as you like.
-- 🗓️ **Month by month.** Your library is split into months, each with a line of progress. Finished months get a tick.
+- 🗓️ **Month by month.** Your library is split into months, each showing how many photos are left. Finished months get a tick and move to **Done**, so the **To do** list at the bottom of the screen only holds work left.
 - 🕰️ **On this day.** Photos from today's date in earlier years.
 - 🧺 **A review pile.** Marked photos wait in a grid. Tap one to rescue it.
 - 🔖 **Bookmarks** for photos you can't decide on yet.
-- 📁 **Emoji albums.** Tap ＋ under the photo on the swipe screen to make one, like ✈️ Trips. Tap the emoji, swipe right, and the photo lands in that album in Apple Photos. Undo takes it back out. Open an album to **Select** photos and favourite them, move them to another album, take them out or delete them. (Shared iCloud albums aren't possible: Apple gives apps no access to them.)
+- 📁 **Emoji albums.** Tap ＋ under the photo on the swipe screen to make one, like ✈️ Trips. On the home screen each album shows its emoji and name. Tap the emoji, swipe right, and the photo lands in that album in Apple Photos. Undo takes it back out. Open an album to **Select** photos and favourite them, move them to another album, take them out or delete them. (Shared iCloud albums aren't possible: Apple gives apps no access to them.)
 - 🎉 **A finish screen** for every month: the tick draws itself, your album emojis burst out, and **Next** takes you straight to the following month.
 - 📊 **Stats:** space freed, photos kept and deleted, and a daily streak.
 
@@ -223,13 +223,24 @@ That's it, about a minute. Nothing is downloaded, so your Team and Bundle Identi
 
 ### 📶 Skip the cable: install over Wi-Fi
 
-You only need the cable once. After that, renewing and updating can happen over Wi-Fi.
+You only need the cable **once**. After your first install, Xcode remembers your iPhone and can reach it over Wi-Fi. There is nothing to tick in recent Xcode: it happens by itself.
 
-1. With the iPhone plugged in, open **Window → Devices and Simulators** in Xcode.
-2. Click your iPhone in the list and tick **Connect via network**.
-3. Unplug it. From now on, keep the Mac and iPhone on the **same Wi-Fi**, unlock the phone, pick it at the top of Xcode and press **Run**.
+**For it to work, all of these must be true:**
 
-> 💡 This is the same install as with the cable, just without the wire. If the phone shows as "not connected", unlock it and check both are on the same network. The first wireless install can take a little longer.
+| Check | Why |
+|---|---|
+| 📶 The iPhone is on **Wi-Fi, not mobile data** | Look for the Wi-Fi fan icon at the top of the iPhone. On mobile data the Mac cannot see the phone at all. |
+| 🏠 The iPhone and the Mac are on the **same Wi-Fi network** | Same name in **Settings → Wi-Fi** on the phone and in the Mac's Wi-Fi menu. Not a guest network, which keeps devices apart. |
+| 🔓 The iPhone is **unlocked** | A locked phone hides itself from Xcode. |
+| 🔌 You have installed with the cable **at least once** | That first wired install is what pairs the phone with your Mac. |
+
+**Then, each time you update or renew:**
+
+1. Unlock the iPhone, check it is on the same Wi-Fi as the Mac.
+2. In Xcode, pick your iPhone in the device menu at the top. It shows a small 🌐 globe instead of a cable.
+3. Press **Run ▶**. The first wireless install can take a little longer.
+
+> 💡 **Phone says "Unavailable" or "must be nearby or plugged in"?** It is almost always mobile data or a different Wi-Fi. Switch the phone to the Mac's Wi-Fi and wait about 30 seconds. Still missing? Plug the cable in once, wait 10 seconds, unplug, and try again.
 
 ---
 
@@ -301,7 +312,7 @@ I'm a finance student, not a software engineer. I wrote the brief, made the desi
 | **Developer Mode is not in Settings** | It appears after the phone has been connected to Xcode once. Plug in, open Xcode, then look again. |
 | **The app only shows a few photos** | Photo access is limited. iPhone: **Settings → Apps → Photo Swipe → Photos → Full Access**. |
 | **Your iPhone is not in Xcode's device menu** | Unlock the phone, tap **Trust**, and try a different cable or port. |
-| **Xcode says the iPhone is "not connected"** | Plug it in, or set up [Wi-Fi installs](#-skip-the-cable-install-over-wi-fi). Over Wi-Fi the phone must be unlocked and on the same network as the Mac. |
+| **Xcode says the iPhone is "Unavailable" or "not connected"** | The phone is probably on mobile data or a different Wi-Fi. Put it on the **same Wi-Fi as the Mac**, unlock it, wait 30 seconds. [Wi-Fi installs](#-skip-the-cable-install-over-wi-fi) |
 | **The build fails right after an iOS update** | Update Xcode from the Mac App Store, then press Run again. |
 
 Still stuck? [Open an issue](https://github.com/warrenlimzf/photo-swipe/issues) and say what you saw.

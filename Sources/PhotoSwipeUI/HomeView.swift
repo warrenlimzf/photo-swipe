@@ -1,6 +1,12 @@
 import SwiftUI
 import SwipeCore
 
+/// The switch at the bottom of the library: months still to sort, or months already finished.
+private enum MonthFilter: String, CaseIterable, Identifiable {
+    case toDo = "To do", done = "Done"
+    var id: Self { self }
+}
+
 private enum Route: Hashable {
     case bookmarks, stats, settings
     case album(String)
@@ -14,6 +20,7 @@ struct HomeView: View {
     @State private var route: Route?
     @State private var showTrash = false
     @State private var editor: EditorTarget?
+    @State private var filter: MonthFilter = .toDo
     @Namespace private var zoom
 
     var body: some View {
@@ -38,13 +45,16 @@ struct HomeView: View {
                             .padding(.top, 36)
                             .rise(ready, order: 1)
                     }
-                    ForEach(model.months, id: \.key) { month in
+                    ForEach(shownMonths, id: \.key) { month in
                         MonthSection(group: month, title: monthName(month.key)) {
                             Haptics.tick(model.hapticsEnabled)
                             deck = Deck(title: monthName(month.key), ids: month.ids, month: month.key)
                         }
                         .zoomSource(monthName(month.key), in: zoom)
                         .rise(ready, order: 2)
+                    }
+                    if shownMonths.isEmpty && !model.library.assets.isEmpty {
+                        emptyFilter.padding(.top, 60)
                     }
                     if model.library.isLoading && model.library.assets.isEmpty {
                         ProgressView().frame(maxWidth: .infinity).padding(.top, 60)
@@ -56,8 +66,12 @@ struct HomeView: View {
                 }
                 .padding(.bottom, 48)
                 .animation(.spring(duration: 0.4), value: model.state.pendingDeletes.isEmpty)
+                .animation(.spring(duration: 0.4), value: filter)
             }
             .background(Theme.canvas.ignoresSafeArea())
+            .safeAreaInset(edge: .bottom) {
+                if !model.library.assets.isEmpty { filterBar }
+            }
             .navigationTitle("Library")
             .toolbar {
                 ToolbarItem(placement: .primaryAction) {
@@ -103,6 +117,42 @@ struct HomeView: View {
     }
 
     private func monthName(_ key: MonthKey) -> String { model.monthName(key) }
+
+    private func isDone(_ month: MonthGroup) -> Bool {
+        let p = model.state.progress(of: month.ids)
+        return p.done == p.total
+    }
+
+    /// Finished months move out of To do and into Done, so the list in front of you is only work left.
+    private var shownMonths: [MonthGroup] {
+        model.months.filter { isDone($0) == (filter == .done) }
+    }
+
+    private var filterBar: some View {
+        let finished = model.months.filter(isDone).count
+        let left = model.months.count - finished
+        return Picker("Months", selection: $filter.animation(.spring(duration: 0.35))) {
+            Text("To do · \(left)").tag(MonthFilter.toDo)
+            Text("Done · \(finished)").tag(MonthFilter.done)
+        }
+        .pickerStyle(.segmented)
+        .padding(6)
+        .background(.ultraThinMaterial, in: Capsule())
+        .padding(.horizontal, 48)
+        .padding(.bottom, 6)
+        .sensoryFeedback(.selection, trigger: filter)
+    }
+
+    @ViewBuilder private var emptyFilter: some View {
+        if filter == .toDo {
+            ContentUnavailableView("All caught up", systemImage: "checkmark.circle",
+                                   description: Text("Every month is sorted. Finished months are under Done."))
+                .foregroundStyle(Theme.keep, Theme.ink)
+        } else {
+            ContentUnavailableView("Nothing finished yet", systemImage: "tray",
+                                   description: Text("When you finish a month it moves here."))
+        }
+    }
 
     /// Three figures on one line, divided by hairlines, over a thin line of progress.
     private var summary: some View {
@@ -213,7 +263,7 @@ private struct MonthSection: View {
                         HStack(spacing: 10) {
                             Text(model.calendar.monthSymbols[max(0, min(11, group.key.month - 1))])
                                 .font(.title.bold())
-                                .foregroundStyle(done ? Theme.muted : Theme.ink)
+                                .foregroundStyle(Theme.ink)
                             if done {
                                 Image(systemName: "checkmark.circle.fill")
                                     .font(.title3)
@@ -224,22 +274,23 @@ private struct MonthSection: View {
                         }
                     }
                     Spacer()
-                    Text(done ? "Done" : "\(progress.done) / \(progress.total)")
-                        .font(.subheadline)
-                        .monospacedDigit()
-                        .foregroundStyle(Theme.muted)
-                        .contentTransition(.numericText())
+                    VStack(alignment: .trailing, spacing: 4) {
+                        Text(done ? "Done" : "\(progress.total - progress.done) left")
+                            .font(.headline)
+                            .monospacedDigit()
+                            .foregroundStyle(done ? Theme.keep : Theme.ink)
+                            .contentTransition(.numericText())
+                        Text(done ? "\(progress.total) sorted" : "\(percent(progress))% sorted").eyebrow().monospacedDigit()
+                    }
                 }
                 .padding(.horizontal, 20)
                 .padding(.top, 44)
                 .padding(.bottom, 16)
                 Mosaic(ids: group.ids)
-                    .saturation(done ? 0 : 1)
-                    .opacity(done ? 0.4 : 1)
                     .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
                     .padding(.horizontal, 16)
                 ProgressLine(value: Double(progress.done) / Double(max(progress.total, 1)), height: 2,
-                             tint: done ? Theme.keep : Theme.ink)
+                             tint: Theme.keep)
                     .padding(.horizontal, 20)
                     .padding(.top, 14)
             }
@@ -248,6 +299,10 @@ private struct MonthSection: View {
         }
         .buttonStyle(DimStyle())
         .accessibilityLabel("\(title), \(progress.done) of \(progress.total) reviewed")
+    }
+
+    private func percent(_ p: (done: Int, total: Int)) -> Int {
+        p.total == 0 ? 0 : Int((Double(p.done) / Double(p.total) * 100).rounded(.down))
     }
 }
 
