@@ -155,6 +155,8 @@ Prefer not to make an account? Bookmark the [Releases page](https://github.com/w
 | **Download ZIP** | Download the new ZIP, open its `PhotoSwipe.xcodeproj`, choose your team again, press **Run**. |
 | **`git clone`** | Run `git pull` in the folder, then press **Run** in Xcode. |
 
+No cable needed once you've set up [installing over Wi-Fi](#-skip-the-cable-install-over-wi-fi).
+
 > ✅ **Your progress is kept.** Install over the app that is already on your phone and your decisions, bookmarks and stats stay. Only deleting the app first wipes them.
 
 > 💡 You have to rebuild every 7 days anyway, so the easy habit is: check for a new release, then renew.
@@ -166,6 +168,16 @@ Prefer not to make an account? Bookmark the [Releases page](https://github.com/w
 An app installed with a free Apple ID stops opening after 7 days. That is Apple's limit, not a fault. The icon stays and your data stays.
 
 To renew: plug the iPhone into the Mac, open the project in Xcode, and press **Run** again. It takes about a minute.
+
+### 📶 Skip the cable: install over Wi-Fi
+
+You only need the cable once. After that, renewing and updating can happen over Wi-Fi.
+
+1. With the iPhone plugged in, open **Window → Devices and Simulators** in Xcode.
+2. Click your iPhone in the list and tick **Connect via network**.
+3. Unplug it. From now on, keep the Mac and iPhone on the **same Wi-Fi**, unlock the phone, pick it at the top of Xcode and press **Run**.
+
+> 💡 This is the same install as with the cable, just without the wire. If the phone shows as "not connected", unlock it and check both are on the same network. The first wireless install can take a little longer.
 
 ---
 
@@ -233,6 +245,7 @@ I'm a finance student, not a software engineer. I wrote the brief, made the desi
 | **Developer Mode is not in Settings** | It appears after the phone has been connected to Xcode once. Plug in, open Xcode, then look again. |
 | **The app only shows a few photos** | Photo access is limited. iPhone: **Settings → Apps → Photo Swipe → Photos → Full Access**. |
 | **Your iPhone is not in Xcode's device menu** | Unlock the phone, tap **Trust**, and try a different cable or port. |
+| **Xcode says the iPhone is "not connected"** | Plug it in, or set up [Wi-Fi installs](#-skip-the-cable-install-over-wi-fi). Over Wi-Fi the phone must be unlocked and on the same network as the Mac. |
 | **The build fails right after an iOS update** | Update Xcode from the Mac App Store, then press Run again. |
 
 Still stuck? [Open an issue](https://github.com/warrenlimzf/photo-swipe/issues) and say what you saw.
