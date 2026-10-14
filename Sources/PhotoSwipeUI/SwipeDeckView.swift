@@ -11,6 +11,8 @@ private struct Leaving: Identifiable {
     let assetID: String
     let decision: Decision
     let from: CGSize
+    /// Emojis of the albums a kept photo went into, for its stamp.
+    var filing = ""
 }
 
 /// The swipe screen. Lit by a blur of the photo in front of you.
@@ -27,12 +29,15 @@ struct SwipeDeckView: View {
     @State private var showTrash = false
     @State private var showInfo = false
     @State private var sizes: [String: Int64] = [:]
+    @State private var selectedAlbums: Set<String> = []
+    @State private var ledger = FilingLedger()
+    @State private var editor: EditorTarget?
 
     private let threshold: CGFloat = 100
 
     init(deck: Deck, state: ReviewState) {
         self.deck = deck
-        _session = State(initialValue: ReviewSession(ids: deck.ids, state: state))
+        _session = State(initialValue: ReviewSession(ids: deck.ids, state: state, onlyUndecided: !deck.everyPhoto))
     }
 
     var body: some View {
@@ -40,6 +45,7 @@ struct SwipeDeckView: View {
             topBar
             ProgressLine(value: Double(session.index) / Double(max(session.ids.count, 1)), height: 2)
                 .padding(.horizontal, 4)
+            HStack(alignment: .top, spacing: 8) {
             ZStack {
                 if session.isFinished {
                     finished.transition(.scale(scale: 0.96).combined(with: .opacity))
@@ -47,7 +53,7 @@ struct SwipeDeckView: View {
                 // Keyed by photo, so the card underneath becomes the top card without being rebuilt.
                 ForEach([session.next, session.current].compactMap { $0 }, id: \.self) { id in
                     let isTop = id == session.current
-                    CardView(id: id, drag: isTop ? drag : .zero)
+                    CardView(id: id, drag: isTop ? drag : .zero, filing: isTop ? filingEmojis : "")
                         .scaleEffect(isTop ? 1 : 0.92 + 0.08 * pull)
                         .opacity(isTop ? 1 : Double(pull))
                         .offset(isTop ? drag : .zero)
@@ -64,6 +70,10 @@ struct SwipeDeckView: View {
                 }
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
+                AlbumRail(selected: $selectedAlbums, onAdd: { editor = .new }, onEdit: { editor = .edit($0) })
+                    .opacity(session.isFinished ? 0 : 1)
+                    .allowsHitTesting(!session.isFinished)
+            }
             caption
             controls
         }
@@ -71,6 +81,31 @@ struct SwipeDeckView: View {
         .padding(.bottom, 8)
         .background { Ambient(id: session.current).equatable() }
         .sheet(isPresented: $showTrash) { ReviewDeleteView() }
+        .sheet(item: $editor) { target in
+            AlbumEditor(editing: target.album) { newID in
+                withAnimation(.spring(duration: 0.3)) { _ = selectedAlbums.insert(newID) }
+            }
+        }
+        .onChange(of: model.state.shelf.map(\.id)) { _, ids in
+            selectedAlbums.formIntersection(ids)
+        }
+        .overlay(alignment: .top) {
+            if let message = model.albumError {
+                Text(message)
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(Theme.ink)
+                    .padding(.horizontal, 16)
+                    .padding(.vertical, 10)
+                    .background(.ultraThinMaterial, in: Capsule())
+                    .padding(.top, 56)
+                    .transition(.move(edge: .top).combined(with: .opacity))
+                    .task {
+                        try? await Task.sleep(for: .seconds(2.5))
+                        withAnimation { model.albumError = nil }
+                    }
+            }
+        }
+        .animation(.spring(duration: 0.35), value: model.albumError)
         .task(id: session.index) {
             let ahead = session.ids.dropFirst(session.index + 1).prefix(3)
             model.library.preheat(Array(ahead), side: cardSide)
@@ -219,6 +254,11 @@ struct SwipeDeckView: View {
         session.canUndo && model.library.ref(session.ids[session.index - 1]) != nil
     }
 
+    /// Emojis of the selected albums, in rail order.
+    private var filingEmojis: String {
+        model.state.shelf.filter { selectedAlbums.contains($0.id) }.map(\.emoji).joined()
+    }
+
     private var isBookmarked: Bool {
         session.current.map(model.state.bookmarks.contains) ?? false
     }
@@ -253,7 +293,16 @@ struct SwipeDeckView: View {
     private func decide(_ decision: Decision) {
         guard let id = session.current, !isUndoing else { return }
         Haptics.tap(model.hapticsEnabled)
-        let exit = Leaving(assetID: id, decision: decision, from: drag)
+        var filed: [String] = []
+        if decision == .keep {
+            let members = Dictionary(uniqueKeysWithValues: selectedAlbums.map { ($0, Set(model.albumMembers[$0] ?? [])) })
+            filed = FilingLedger.newAlbums(for: id, selected: selectedAlbums,
+                                           shelfOrder: model.state.shelf.map(\.id), members: members)
+            model.file(id, into: filed)
+        }
+        ledger.record(id, albums: filed)
+        let exit = Leaving(assetID: id, decision: decision, from: drag,
+                           filing: decision == .keep ? filingEmojis : "")
         leaving.append(exit)
         withAnimation(.spring(duration: 0.34, bounce: 0.18)) {
             model.apply { session.swipe(decision, state: &$0, day: model.today) }
@@ -272,6 +321,8 @@ struct SwipeDeckView: View {
         isUndoing = true
         Haptics.tap(model.hapticsEnabled)
         let wasKept = model.state.decisions[session.ids[session.index - 1]] == .keep
+        let photo = session.ids[session.index - 1]
+        model.unfile(photo, from: ledger.takeBack(photo))
         var instant = Transaction()
         instant.disablesAnimations = true
         withTransaction(instant) {
@@ -326,7 +377,7 @@ private struct FlyingCard: View {
     var body: some View {
         let side: CGFloat = item.decision == .keep ? 1 : -1
         let x = gone ? side * 640 : item.from.width
-        CardView(id: item.assetID, drag: CGSize(width: side * 200, height: 0))
+        CardView(id: item.assetID, drag: CGSize(width: side * 200, height: 0), filing: item.filing)
             .offset(x: x, y: item.from.height + (gone ? 40 : 0))
             .rotationEffect(.degrees(reduceMotion ? 0 : Double(x) / 24), anchor: .bottom)
             .opacity(reduceMotion && gone ? 0 : 1)
@@ -365,6 +416,7 @@ private struct RoundButton: View {
 private struct CardView: View {
     let id: String
     let drag: CGSize
+    var filing = ""
     @Environment(AppModel.self) private var model
     @State private var player: AVPlayer?
 
@@ -395,7 +447,7 @@ private struct CardView: View {
             }
             .clipped()
             .overlay { (drag.width > 0 ? Theme.keep : Theme.delete).opacity(Double(min(abs(drag.width) / 100, 1)) * 0.22) }
-            .overlay(alignment: .topLeading) { stamp("Keep", "checkmark", Theme.keep, drag.width) }
+            .overlay(alignment: .topLeading) { stamp(filing.isEmpty ? "Keep" : "Keep \(filing)", "checkmark", Theme.keep, drag.width) }
             .overlay(alignment: .topTrailing) { stamp("Delete", "xmark", Theme.delete, -drag.width) }
             .clipShape(RoundedRectangle(cornerRadius: 24, style: .continuous))
             .shadow(color: .black.opacity(0.45), radius: 26, y: 16)

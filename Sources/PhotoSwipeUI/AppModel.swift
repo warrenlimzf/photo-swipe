@@ -7,6 +7,8 @@ struct Deck: Identifiable {
     /// Also names the card the deck zooms out of.
     let title: String
     let ids: [String]
+    /// True for an album being cleaned up: offer every photo, not just undecided ones.
+    var everyPhoto = false
 }
 
 @MainActor @Observable
