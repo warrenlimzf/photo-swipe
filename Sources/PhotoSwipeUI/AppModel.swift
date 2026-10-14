@@ -95,7 +95,14 @@ public final class AppModel {
         return true
     }
 
+    /// Re-reads every album from Photos once pending writes have landed, so a fresh read
+    /// never brings back a photo a queued remove is about to take out.
     func refreshAlbums() async {
+        await albumQueue?.value
+        await loadAlbumMembers()
+    }
+
+    private func loadAlbumMembers() async {
         var result: [String: [String]] = [:]
         for album in state.shelf where !album.albumID.isEmpty {
             result[album.id] = await library.members(of: album.albumID)
@@ -168,7 +175,8 @@ public final class AppModel {
                 try await work()
             } catch {
                 self?.albumError = "Couldn't update the album in Photos"
-                await self?.refreshAlbums()
+                // Not refreshAlbums(): that waits for this very task and would never return.
+                await self?.loadAlbumMembers()
             }
         }
     }

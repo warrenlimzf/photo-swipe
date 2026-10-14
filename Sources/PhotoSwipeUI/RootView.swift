@@ -32,7 +32,13 @@ public struct RootView: View {
             withAnimation(.easeOut(duration: 0.3)) { showSplash = false }
         }
         .onChange(of: scenePhase) { _, phase in
-            if phase == .active { model.library.refreshAccess() } else { model.saveNow() }
+            if phase == .active {
+                model.library.refreshAccess()
+                // Albums may have changed in the Photos app while this one was in the background.
+                Task { await model.refreshAlbums() }
+            } else {
+                model.saveNow()
+            }
         }
     }
 }

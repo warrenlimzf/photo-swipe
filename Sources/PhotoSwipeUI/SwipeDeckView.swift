@@ -106,6 +106,9 @@ struct SwipeDeckView: View {
             }
         }
         .animation(.spring(duration: 0.35), value: model.albumError)
+        // Fresh album contents before the first swipe, so undo never takes a photo out of an
+        // album it was already in.
+        .task { await model.refreshAlbums() }
         .task(id: session.index) {
             let ahead = session.ids.dropFirst(session.index + 1).prefix(3)
             model.library.preheat(Array(ahead), side: cardSide)

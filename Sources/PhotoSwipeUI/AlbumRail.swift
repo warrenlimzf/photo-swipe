@@ -7,6 +7,7 @@ struct AlbumRail: View {
     let onAdd: () -> Void
     let onEdit: (ShelfAlbum) -> Void
     @Environment(AppModel.self) private var model
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var bubble: String?
     @State private var bubbleTask: Task<Void, Never>?
 
@@ -15,12 +16,12 @@ struct AlbumRail: View {
             VStack(spacing: 10) {
                 ForEach(model.state.shelf) { album in
                     emojiButton(album)
-                        .transition(.scale(scale: 0.6).combined(with: .opacity))
+                        .transition(reduceMotion ? .opacity : .scale(scale: 0.6).combined(with: .opacity))
                 }
                 addButton
             }
             .padding(.vertical, 4)
-            .animation(.spring(duration: 0.35, bounce: 0.3), value: model.state.shelf.map(\.id))
+            .animation(reduceMotion ? .easeOut(duration: 0.15) : .spring(duration: 0.35, bounce: 0.3), value: model.state.shelf.map(\.id))
         }
         // The name bubble pokes out to the left of the rail, so clipping is off; the mask then
         // clips top and bottom only, so a long rail never draws over the top bar or the buttons.
@@ -37,7 +38,7 @@ struct AlbumRail: View {
                 .frame(width: 46, height: 46)
                 .background(.ultraThinMaterial, in: Circle())
                 .overlay { Circle().strokeBorder(isOn ? Theme.keep : Theme.hairline, lineWidth: isOn ? 2.5 : 1) }
-                .scaleEffect(isOn ? 1.06 : 1)
+                .scaleEffect(isOn && !reduceMotion ? 1.06 : 1)
                 .opacity(selected.isEmpty || isOn ? 1 : 0.7)
         }
         .buttonStyle(PressStyle())
@@ -45,7 +46,7 @@ struct AlbumRail: View {
             if bubble == album.id {
                 NameBubble(name: album.name, isOn: isOn)
                     .offset(x: -56)
-                    .transition(.offset(x: 16).combined(with: .opacity))
+                    .transition(reduceMotion ? .opacity : .offset(x: 16).combined(with: .opacity))
                     .allowsHitTesting(false)
             }
         }
@@ -76,7 +77,7 @@ struct AlbumRail: View {
 
     private func toggle(_ album: ShelfAlbum) {
         Haptics.tick(model.hapticsEnabled)
-        withAnimation(.spring(duration: 0.3, bounce: 0.35)) {
+        withAnimation(reduceMotion ? .easeOut(duration: 0.15) : .spring(duration: 0.3, bounce: 0.35)) {
             if selected.contains(album.id) { selected.remove(album.id) } else { selected.insert(album.id) }
             bubble = album.id
         }
