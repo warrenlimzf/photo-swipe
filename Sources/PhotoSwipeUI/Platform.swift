@@ -120,6 +120,13 @@ extension View {
     }
 }
 
+/// Apple lets apps open Photos but not a specific album.
+func openPhotosApp() {
+    #if canImport(UIKit)
+    if let url = URL(string: "photos-redirect://") { UIApplication.shared.open(url) }
+    #endif
+}
+
 func openSystemSettings() {
     #if canImport(UIKit)
     if let url = URL(string: UIApplication.openSettingsURLString) { UIApplication.shared.open(url) }

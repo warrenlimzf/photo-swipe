@@ -148,4 +148,64 @@ final class PhotoLibrary {
             PHAssetChangeRequest.deleteAssets(picked as NSArray)
         }
     }
+
+    // MARK: Albums. Only adds and removes album membership; never deletes a photo.
+
+    private final class IDBox: @unchecked Sendable { var value = "" }
+
+    func albumExists(_ albumID: String) -> Bool {
+        !albumID.isEmpty && collection(albumID) != nil
+    }
+
+    /// Makes a new album in Photos and returns its identifier.
+    func createAlbum(titled title: String) async throws -> String {
+        let box = IDBox()
+        try await PHPhotoLibrary.shared().performChanges {
+            let request = PHAssetCollectionChangeRequest.creationRequestForAssetCollection(withTitle: title)
+            box.value = request.placeholderForCreatedAssetCollection.localIdentifier
+        }
+        return box.value
+    }
+
+    func renameAlbum(_ albumID: String, to title: String) async throws {
+        guard let album = collection(albumID) else { return }
+        try await PHPhotoLibrary.shared().performChanges {
+            PHAssetCollectionChangeRequest(for: album)?.title = title
+        }
+    }
+
+    func add(_ photoID: String, toAlbum albumID: String) async throws {
+        guard let asset = byID[photoID], let album = collection(albumID) else { return }
+        try await PHPhotoLibrary.shared().performChanges {
+            PHAssetCollectionChangeRequest(for: album)?.addAssets([asset] as NSArray)
+        }
+    }
+
+    func remove(_ photoID: String, fromAlbum albumID: String) async throws {
+        guard let asset = byID[photoID], let album = collection(albumID) else { return }
+        try await PHPhotoLibrary.shared().performChanges {
+            PHAssetCollectionChangeRequest(for: album)?.removeAssets([asset] as NSArray)
+        }
+    }
+
+    /// Photo ids in an album, newest first.
+    func members(of albumID: String) async -> [String] {
+        await Task.detached(priority: .userInitiated) { Self.fetchMembers(albumID) }.value
+    }
+
+    private nonisolated static func fetchMembers(_ albumID: String) -> [String] {
+        guard let album = PHAssetCollection.fetchAssetCollections(withLocalIdentifiers: [albumID], options: nil).firstObject
+        else { return [] }
+        let options = PHFetchOptions()
+        options.sortDescriptors = [NSSortDescriptor(key: "creationDate", ascending: false)]
+        var ids: [String] = []
+        PHAsset.fetchAssets(in: album, options: options).enumerateObjects { asset, _, _ in
+            if asset.mediaType == .image || asset.mediaType == .video { ids.append(asset.localIdentifier) }
+        }
+        return ids
+    }
+
+    private func collection(_ albumID: String) -> PHAssetCollection? {
+        PHAssetCollection.fetchAssetCollections(withLocalIdentifiers: [albumID], options: nil).firstObject
+    }
 }

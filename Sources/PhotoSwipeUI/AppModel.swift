@@ -15,6 +15,11 @@ public final class AppModel {
     private(set) var state: ReviewState
     private(set) var months: [MonthGroup] = []
     private(set) var onThisDay: [String] = []
+    /// Photo ids in each emoji album, newest first. Keyed by `ShelfAlbum.id`.
+    private(set) var albumMembers: [String: [String]] = [:]
+    /// A short notice when Photos refuses an album change. The swipe screen shows and clears it.
+    var albumError: String?
+    private var albumQueue: Task<Void, Never>?
     var hapticsEnabled: Bool {
         didSet { UserDefaults.standard.set(hapticsEnabled, forKey: "haptics") }
     }
@@ -56,6 +61,7 @@ public final class AppModel {
         if !library.assets.isEmpty {
             apply { $0.prune(existing: Set(dated.map(\.id))) }
         }
+        await refreshAlbums()
     }
 
     /// Every change to saved state goes through here so it is written to disk.
@@ -87,8 +93,82 @@ public final class AppModel {
         return true
     }
 
+    func refreshAlbums() async {
+        var result: [String: [String]] = [:]
+        for album in state.shelf where !album.albumID.isEmpty {
+            result[album.id] = await library.members(of: album.albumID)
+        }
+        albumMembers = result
+    }
+
+    /// Makes the album in Photos and puts its emoji at the bottom of the rail. Returns the shelf id.
+    func createShelfAlbum(emoji: String, name: String) async throws -> String {
+        var album = ShelfAlbum(emoji: emoji, name: name)
+        album.albumID = try await library.createAlbum(titled: album.title)
+        apply { $0.addToShelf(album) }
+        albumMembers[album.id] = []
+        return album.id
+    }
+
+    func editShelfAlbum(_ id: String, emoji: String, name: String) async throws {
+        apply { $0.updateShelf(id, emoji: emoji, name: name) }
+        guard let album = state.shelf.first(where: { $0.id == id }), library.albumExists(album.albumID) else { return }
+        try await library.renameAlbum(album.albumID, to: album.title)
+    }
+
+    func removeFromShelf(_ id: String) {
+        apply { $0.removeFromShelf(id) }
+        albumMembers[id] = nil
+    }
+
+    /// Adds a kept photo to albums. The count updates at once; Photos catches up in order.
+    func file(_ photo: String, into shelfIDs: [String]) {
+        guard !shelfIDs.isEmpty else { return }
+        for id in shelfIDs { albumMembers[id, default: []].insert(photo, at: 0) }
+        enqueue { [self] in
+            for id in shelfIDs {
+                guard let albumID = try await liveAlbumID(id) else { continue }
+                try await library.add(photo, toAlbum: albumID)
+            }
+        }
+    }
+
+    func unfile(_ photo: String, from shelfIDs: [String]) {
+        guard !shelfIDs.isEmpty else { return }
+        for id in shelfIDs { albumMembers[id]?.removeAll { $0 == photo } }
+        enqueue { [self] in
+            for id in shelfIDs {
+                guard let album = state.shelf.first(where: { $0.id == id }), library.albumExists(album.albumID) else { continue }
+                try await library.remove(photo, fromAlbum: album.albumID)
+            }
+        }
+    }
+
+    /// The album's Photos id, recreating the album if the user deleted it in Photos.
+    private func liveAlbumID(_ shelfID: String) async throws -> String? {
+        guard let album = state.shelf.first(where: { $0.id == shelfID }) else { return nil }
+        if library.albumExists(album.albumID) { return album.albumID }
+        let fresh = try await library.createAlbum(titled: album.title)
+        apply { $0.setAlbumID(fresh, for: shelfID) }
+        return fresh
+    }
+
+    /// Album writes run one after another, so an undo never overtakes the add it reverses.
+    private func enqueue(_ work: @escaping @MainActor () async throws -> Void) {
+        let previous = albumQueue
+        albumQueue = Task { [weak self] in
+            await previous?.value
+            do {
+                try await work()
+            } catch {
+                self?.albumError = "Couldn't update the album in Photos"
+                await self?.refreshAlbums()
+            }
+        }
+    }
+
     func resetProgress() {
-        apply { $0 = ReviewState() }
+        apply { $0.resetProgress() }
         saveNow()
     }
 }
