@@ -105,7 +105,12 @@ Click the green **Code** button on this page, then **Download ZIP**, and unzip i
 cd ~ && (git clone https://github.com/warrenlimzf/photo-swipe.git 2>/dev/null || (cd photo-swipe && git fetch && git reset --hard @{u})) && open ~/photo-swipe/PhotoSwipe.xcodeproj
 ```
 
-> ⚠️ **Every download puts the Bundle Identifier back to `com.warrenlimzf.photoswipe`.** That happens with the ZIP and with this command, on the first install and on every update. So **do step 6 every single time**, or Xcode shows a red "Failed Registering Bundle Identifier" error. Your progress in the app lives on your phone and is kept.
+> ⚠️ **After pasting this, change two things in Xcode before you press Run, every single time** (first install and every update):
+>
+> 1. **Team** → pick your own name ("Personal Team").
+> 2. **Bundle Identifier** → change `com.warrenlimzf.photoswipe` to your own `com.XXX.photoswipe` (for example `com.yourname.photoswipe`), the same one each time.
+>
+> Each download resets both back to mine, so skipping this gives a red "Failed Registering Bundle Identifier" error. Where to find them: [step 6](#6%EF%B8%8F⃣-choose-your-team-and-give-the-app-your-own-id-required). Your progress in the app lives on your phone and is kept.
 
 ### 4️⃣ Open the project
 In the folder, double-click **`PhotoSwipe.xcodeproj`**. Xcode opens.
