@@ -15,7 +15,7 @@ Working name "Photo Swipe"; the App Store name is still Warren's call. Repo `war
 | `PhotoSwipe.xcodeproj/` | Hand-written Xcode project (bundle id, Info.plist keys, signing). The source of truth; committed. |
 | `project.yml` | Unused XcodeGen equivalent of the project, kept for reference. |
 | `App/Assets.xcassets` + `tools/make_icon.py` | App icon and the script that draws it. |
-| `site/` | The case-study page (one static `index.html`, relative paths). Vercel project `photo-swipe`, served at warrenlimzf.com/photo-swipe through a rewrite in `1.0 - personal website/vercel.json` to `photo-swipe-three.vercel.app` (`photo-swipe.vercel.app` belongs to someone else). Deploy: `cd site && vercel deploy --prod --yes --scope warrenlimzf-projects`. |
+| `site/` | The marketing landing page (one static `index.html`, relative paths; GSAP 3.12.5 + ScrollTrigger + Lenis 1.1.13 from CDN; few words, motion first, detail goes in the README). `img/photos/` = 21 shots from the simulator set (his own photos, no wallpapers); `img/v13-*.jpg` = v1.3 screens. Verify at 10 sizes before shipping (memory `marketing-pages-few-words`). Vercel project `photo-swipe`, served at warrenlimzf.com/photo-swipe through a rewrite in `1.0 - personal website/vercel.json` to `photo-swipe-three.vercel.app` (`photo-swipe.vercel.app` belongs to someone else). Deploy: `cd site && vercel deploy --prod --yes --scope warrenlimzf-projects`. |
 | `README.md`, `LICENSE`, `docs/screenshots/` | Public face of the repo: install guide, safety notes, MIT. Screenshots use Warren's own published gallery photos, never Apple wallpapers. |
 | `install-local.sh` | Gitignored. Signs with his team and installs on his iPhone. The only place his Team ID and device ID live; keep both out of tracked files. |
 | `docs/spec.md` | Feature spec, research on the original, App Store checklist. |
@@ -38,5 +38,5 @@ Working name "Photo Swipe"; the App Store name is still Warren's call. Repo `war
 - **Look = "Gallery" (Warren picked it 14 Oct 2026 after rejecting a navy/ivory hero-card version as "very AI").** Always dark, black canvas, photos edge to edge with 2pt gaps, no cards, tiles, gradient heroes or pill chips. System font only, tabular numerals. Cool off-black canvas, warm-white type, no accent colour; soft green and coral only for keep/delete. Labels in small tracked capitals (`.eyebrow()`) beside large names. `Theme` lives in `Platform.swift`.
 - Test with real photographs, never generated gradient images: blobs make any layout look AI-made. `tools/` holds the icon script; the simulator photo set is rebuilt from macOS wallpapers.
 
-Emoji albums shipped in v1.1.0 (plan `docs/superpowers/plans/2026-10-14-emoji-albums.md`).
+Emoji albums shipped in v1.1.0 (plan `docs/superpowers/plans/2026-10-14-emoji-albums.md`). v1.3.0 (14 Oct): Library has a To do / Done switch (finished months move to Done, nothing is greyed out); album rows show emoji then name. README is split into First install / Your two Xcode settings / Update / 7-day renewal / Wi-Fi; `install-local.sh` also works over Wi-Fi once paired.
 State and next steps: `SESSION_HANDOFF.md`.

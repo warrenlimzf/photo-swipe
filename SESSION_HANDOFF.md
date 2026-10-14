@@ -1,41 +1,35 @@
-# Session handoff — emoji albums designed and planned, ready to build (14 Oct 2026)
+# Session handoff — v1.3.0, README rebuilt, landing page rebuilt as marketing (14 Oct 2026)
 
 > Persistent resume file. Paste into a fresh session (or auto-load via a SessionStart hook).
 > Delta only — project overview, layout, invariants and commands live in CLAUDE.md (auto-loaded).
 
-**Role:** the next session builds the planned feature end to end (tests, simulator check, release, reinstall). Warren reviews on his iPhone.
+**Role:** Warren reviews on his iPhone and on the live URL; Claude builds, releases and deploys.
 
 ## Status — updated 2026-10-14
-- v1.0.0 is on Warren's iPhone via free signing. **It stops opening around 2026-10-21** and needs `./install-local.sh`.
-- New feature agreed with Warren in chat and written as a plan, **nothing built yet**:
-  `docs/superpowers/plans/2026-10-14-emoji-albums.md`. Emoji albums: a rail of user-made emoji buttons on the right
-  of the swipe screen, tap one (stays selected), swipe right, the photo goes into that real Apple Photos album; ＋ at
-  the bottom makes a new one; first launch has no albums; Albums list on the home screen with an album page.
-- Warren wants it kept simple, with the animations in (spring on rail buttons, name bubble that slides out and fades,
-  emojis in the Keep stamp). The plan's top section is the agreed design; follow it, don't add scope.
-- Decisions taken in chat: selection stays on between photos and resets when the deck closes; swipe up was dropped;
-  iCloud Shared Albums are impossible (no API); apps can open Photos but not a given album, so albums are browsed inside
-  the app; Reset progress must keep albums.
+- v1.3.0 released and installed on Warren's iPhone OVER WI-FI (devicectl transport `localNetwork`). Next renewal ~21 Oct, cable not needed if phone is on the Mac's Wi-Fi.
+- README rebuilt around three paths (first install / update / 7-day renewal) with a shared "Your two Xcode settings" section (Team + Bundle ID reset on every download). No personal names in it. All in-page anchors verified on GitHub's rendered page.
+- Landing page warrenlimzf.com/photo-swipe rebuilt as a marketing page: live auto-swiping deck inside a drawn iPhone (drag, keys, undo work), upright keep/bin word beside it, pinned "Thousands of photos." storm on a shuffled jittered grid ending "Keep the keepers. Bin the blurry bits.", four screens with one word each, marquee, "Get it." CTA. Measured clean at 10 screen sizes. Warren: "very good".
+- Hall Aircon demo page also changed this session (see 7.0 hall-aircond); Warren then said to leave it until its features change.
 
 ## Next actions
-1. Execute the plan task by task (superpowers:executing-plans), Tasks 1 to 6. Commit and push after each task.
-2. Task 6 ends with v1.1.0 release, case-study line + deploy, and a reinstall on his phone (he plugs it in).
+1. Wait for Warren's next review notes on the landing page; he asked earlier for the hero to keep visibly moving on scroll (now stronger) and may want a specific older motion back.
+2. Icon and marketing design tweaks are "later" per Warren; do not start.
 
 ## Running state
 - Background processes: none
 - Dev servers / ports: none
-- Worktrees / branches: `main` (public), `dev-history-2026-10-14` (private history, never push to `origin`)
+- Worktrees / branches: `main` (public), `dev-history-2026-10-14` (private, never push to origin)
 
 ## Process cleanup
-- Stopped: none started this session
+- Stopped: next dev on :3077 (shells ba0skgrh8, brvse8pz2), python http.server on :4173 (several, by PID). Verified no listeners on either port.
 - Still running on purpose: none
-- Ownership unverified (left alone): none
+- Ownership unverified (left alone): none (Playwright MCP Chrome is CLI-owned and exits with the CLI)
 
 ## Open items
-- His commit email is visible on the public repo. Offered GitHub's no-reply address; no answer yet.
-- Undo on a month being re-reviewed clears the decision instead of restoring the old one (pre-existing, not in this plan).
-- Screens not yet checked in the Gallery look: welcome/permission, Bookmarks, Settings, a video card, large Dynamic Type.
-- The simulator holds test photos copied from his published gallery; reuse them for Task 6.
+- The Albums screenshot on the landing page shows his real album "Girlfriend"; offered to swap, no answer.
+- Unused old images `site/img/library.jpg`, `months.jpg` still in the repo (kept, §1).
+- `project.pbxproj` keeps his Team ID locally, uncommitted on purpose.
+- Older items still open from before: commit email visible on the public repo; undo on a re-reviewed month clears instead of restoring.
 
 ## Pick up here
-Read `docs/superpowers/plans/2026-10-14-emoji-albums.md` in full, then start Task 1 (SwipeCore tests first).
+Ask Warren for his next round of notes on warrenlimzf.com/photo-swipe; everything is shipped and live.
