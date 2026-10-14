@@ -52,7 +52,10 @@
   .kicker i { width: 8px; height: 8px; border-radius: 50%; background: var(--keep); box-shadow: 0 0 0 0 var(--keep); animation: ping 2.2s infinite; }
   @keyframes ping { 0% { box-shadow: 0 0 0 0 rgba(111, 207, 151, .6); } 80%, 100% { box-shadow: 0 0 0 12px rgba(111, 207, 151, 0); } }
   h1 { font-family: var(--display); font-weight: 400; font-size: clamp(3.3rem, 8.4vw, 9rem); line-height: .88; letter-spacing: -.035em; margin: 1.6rem 0 0; padding-top: .04em; }
-  h1 .line { display: block; overflow: hidden; padding-bottom: .08em; white-space: nowrap; }
+  /* Each line is a mask for the slide-in. Room above and below so tall letters (the S) are never cut,
+     and the mask is lifted once the entrance ends. */
+  h1 .line { display: block; overflow: hidden; padding: .14em .04em .1em; margin: -.14em -.04em -.1em; white-space: nowrap; }
+  h1 .line.open { overflow: visible; }
   h1 .line > span { display: inline-block; }
   h1 em { color: var(--keep); }
   .lede { font-size: clamp(1.15rem, 1.6vw, 1.45rem); color: var(--muted); margin: 1.8rem 0 0; max-width: 40ch; }
@@ -431,15 +434,21 @@
   fill(); showPos(); startAuto(1800);
 
   /* ---------------- entrances ---------------- */
-  if (!hasGsap || reduced) return;
+  if (!hasGsap || reduced) { document.querySelectorAll("h1 .line").forEach((l) => l.classList.add("open")); return; }
 
-  gsap.from("h1 .line > span", { yPercent: 110, rotate: 4, duration: 1.3, ease: "expo.out", stagger: 0.09, delay: 0.1 });
+  gsap.from("h1 .line > span", { yPercent: 110, rotate: 4, duration: 1.3, ease: "expo.out", stagger: 0.09, delay: 0.1,
+    onComplete: () => document.querySelectorAll("h1 .line").forEach((l) => l.classList.add("open")) });
   gsap.from(".hero .reveal", { y: 30, opacity: 0, duration: 1, ease: "expo.out", stagger: 0.08, delay: 0.45 });
   gsap.from("#phone", { y: 160, rotate: 8, opacity: 0, duration: 1.6, ease: "expo.out", delay: 0.25 });
   gsap.from(".bigword", { scale: 0.4, opacity: 0, duration: 1.6, ease: "expo.out", delay: 0.4 });
   // Hero parallax: the phone drifts slower than the words as you leave.
-  gsap.to(".stage", { yPercent: -18, ease: "none", scrollTrigger: { trigger: ".hero", start: "top top", end: "bottom top", scrub: true } });
-  gsap.to(".hero h1", { yPercent: -30, ease: "none", scrollTrigger: { trigger: ".hero", start: "top top", end: "bottom top", scrub: true } });
+  // Leaving the hero: every layer moves at its own speed, so scrolling itself feels alive.
+  const heroST = { trigger: ".hero", start: "top top", end: "bottom top", scrub: 0.6 };
+  gsap.to(".stage", { yPercent: -16, rotate: -7, scale: 0.94, ease: "none", scrollTrigger: heroST }); // the stage, not the phone, so the swipe wobble never fights the scroll
+  gsap.to(".bigword", { yPercent: -70, ease: "none", scrollTrigger: heroST });
+  gsap.to(".glow", { scale: 1.6, opacity: 0.6, ease: "none", scrollTrigger: heroST });
+  gsap.utils.toArray("h1 .line").forEach((l, i) => gsap.to(l, { xPercent: i % 2 ? 14 : -10 - i * 4, yPercent: -40 - i * 25, ease: "none", scrollTrigger: heroST }));
+  gsap.to([".hero .lede", ".hero .actions", ".hero .tally"], { yPercent: -90, ease: "none", stagger: 0.05, scrollTrigger: heroST });
 
   /* ---------------- the storm (one pinned, scrubbed scene) ---------------- */
   const storm = $("#storm");
@@ -448,13 +457,23 @@
   // Each photo is a wrapper (where it sits, sorted by scroll) holding the picture (how it bursts in).
   // Two elements so the two motions never fight over the same property.
   const rnd = (a, b) => a + Math.random() * (b - a);
-  const wraps = PHOTOS.map((src, i) => {
+  // Spread evenly: one photo per cell of a grid sized to the screen, nudged and tilted at random,
+  // shuffled every visit. Random enough to feel like a mess, even enough that no corner is empty.
+  const shuffled = [...PHOTOS].sort(() => Math.random() - 0.5);
+  const W = storm.clientWidth, H = storm.clientHeight;
+  const cols = W >= 1024 ? 7 : W >= 640 ? 5 : 4, rows = Math.ceil(shuffled.length / cols);
+  const cells = Array.from({ length: cols * rows }, (_, k) => k).sort(() => Math.random() - 0.5).slice(0, shuffled.length);
+  const wraps = shuffled.map((src, i) => {
     const w = document.createElement("div"); w.className = "phw";
     w.dataset.keep = i % 3 !== 0 ? 1 : 0; // two in three kept
-    w.dataset.x = rnd(-3, 90); w.dataset.y = rnd(-4, 80); w.dataset.r = rnd(-24, 24); w.dataset.s = rnd(0.85, 1.25);
+    storm.appendChild(w);
+    const pw = w.offsetWidth, ph = w.offsetHeight, cw = W / cols, ch = H / rows;
+    const c = cells[i] % cols, rw = Math.floor(cells[i] / cols);
+    const x = (c + 0.5) * cw - pw / 2 + rnd(-0.22, 0.22) * cw, y = (rw + 0.5) * ch - ph / 2 + rnd(-0.2, 0.2) * ch;
+    w.dataset.x = (x / W) * 100; w.dataset.y = (y / H) * 100; w.dataset.r = rnd(-22, 22); w.dataset.s = rnd(0.9, 1.15);
     w.style.left = w.dataset.x + "%"; w.style.top = w.dataset.y + "%";
     const p = document.createElement("div"); p.className = "ph"; p.style.backgroundImage = `url(${src})`;
-    w.appendChild(p); storm.appendChild(w); return w;
+    w.appendChild(p); return w;
   });
   const pics = wraps.map((w) => w.firstChild);
   const keepN = wraps.filter((w) => w.dataset.keep === "1").length, binN = wraps.length - keepN;
@@ -470,9 +489,9 @@
       left: (i, w) => w.dataset.x + "%", top: (i, w) => w.dataset.y + "%", rotate: (i, w) => +w.dataset.r, scale: (i, w) => +w.dataset.s,
     }, {
       left: (i, w) => { const g = gutter(), wd = w.offsetWidth; return w.dataset.keep === "1" ? vw() - g - wd * 0.9 - (i % 4) * 8 : g + (i % 4) * 8; },
-      top: (i) => vh() * 0.56 - (i % 7) * 7,
+      top: (i) => vh() * (vw() < 640 ? 0.7 : 0.56) - (i % 7) * 7,
       rotate: (i, w) => (w.dataset.keep === "1" ? 1 : -1) * (4 + (i % 5) * 3),
-      scale: 1, duration: 1.2, stagger: { each: 0.025, from: "random" }, ease: "power3.inOut", immediateRender: false,
+      scale: () => (vw() < 640 ? 0.7 : 1), duration: 1.2, stagger: { each: 0.025, from: "random" }, ease: "power3.inOut", immediateRender: false,
     }, 0.9)
     .fromTo(".pile", { opacity: 0 }, { opacity: 1, duration: 0.3, immediateRender: false }, 1.6)
     .fromTo(wraps.filter((w) => w.dataset.keep === "0"), { opacity: 1, filter: "grayscale(0)" }, { opacity: 0.3, filter: "grayscale(1)", duration: 0.4, immediateRender: false }, 2.0)
@@ -511,18 +530,31 @@
   });
 
   /* ---------------- CTA: photos orbit in, the button pulls toward you ---------------- */
-  const orbit = $("#orbit");
-  PHOTOS.slice(0, 10).forEach((src, i) => {
-    const d = document.createElement("div"); d.className = "ph"; d.style.backgroundImage = `url(${src})`;
-    // Five down each side, never over the words in the middle.
-    const side = i % 2 ? 1 : -1, row = Math.floor(i / 2);
-    d.style.left = 50 + side * (34 + (row % 2) * 9) + "%"; d.style.top = 14 + row * 18 + "%";
-    d.style.rotate = rnd(-20, 20) + "deg"; d.style.translate = "-50% -50%";
-    orbit.appendChild(d);
-  });
+  const orbit = $("#orbit"), cta = $(".cta");
+  // Photos sit on a loose grid around the words and skip any spot that would touch them.
+  function placeOrbit() {
+    orbit.innerHTML = "";
+    const box = cta.getBoundingClientRect();
+    const textRect = (el) => { const rg = document.createRange(); rg.selectNodeContents(el); return rg.getBoundingClientRect(); };
+    const keepOut = [textRect($(".cta h2")), $(".cta .btn").getBoundingClientRect(), textRect($(".cta .small"))]
+      .map((t) => ({ l: t.left - box.left - 28, r: t.right - box.left + 28, t: t.top - box.top - 28, b: t.bottom - box.top + 28 }));
+    const pw = Math.max(80, Math.min(150, innerWidth * 0.09)), ph = pw * 4 / 3;
+    const cols = innerWidth >= 1024 ? 7 : 4, rows = innerWidth >= 1024 ? 3 : 5;
+    let n = 0;
+    for (let rw = 0; rw < rows; rw++) for (let c = 0; c < cols; c++) {
+      const x = (c + 0.5) * (box.width / cols) - pw / 2 + rnd(-14, 14), y = (rw + 0.5) * (box.height / rows) - ph / 2 + rnd(-14, 14);
+      const hits = keepOut.some((k) => x < k.r && x + pw > k.l && y < k.b && y + ph > k.t);
+      if (hits || x < 4 || x + pw > box.width - 4) continue;
+      const d = document.createElement("div"); d.className = "ph";
+      d.style.backgroundImage = `url(${PHOTOS[n++ % PHOTOS.length]})`;
+      d.style.left = x + "px"; d.style.top = y + "px"; d.style.width = pw + "px"; d.style.rotate = rnd(-18, 18) + "deg";
+      orbit.appendChild(d);
+    }
+  }
+  placeOrbit();
+  let orbitTimer; addEventListener("resize", () => { clearTimeout(orbitTimer); orbitTimer = setTimeout(placeOrbit, 200); });
   gsap.from(".cta h2", { scale: 0.5, opacity: 0, duration: 1.4, ease: "expo.out", scrollTrigger: { trigger: ".cta", start: "top 70%" } });
-  gsap.from("#orbit .ph", { left: "50%", top: "50%", scale: 0, duration: 1.6, ease: "expo.out", stagger: 0.04, scrollTrigger: { trigger: ".cta", start: "top 70%" } });
-  gsap.to("#orbit", { rotate: 25, ease: "none", scrollTrigger: { trigger: ".cta", start: "top bottom", end: "bottom top", scrub: true } });
+  gsap.from("#orbit .ph", { scale: 0, opacity: 0, duration: 1.4, ease: "back.out(1.7)", stagger: { each: 0.05, from: "center" }, scrollTrigger: { trigger: ".cta", start: "top 70%" } });
   gsap.from(".cta .reveal:not(h2)", { y: 30, opacity: 0, duration: 1, ease: "expo.out", stagger: 0.1, scrollTrigger: { trigger: ".cta", start: "top 60%" } });
 
   document.querySelectorAll(".magnetic").forEach((b) => {
