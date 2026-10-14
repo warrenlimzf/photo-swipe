@@ -3,292 +3,480 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Photo Swipe · an iPhone app by Warren Lim</title>
-<meta name="description" content="An iPhone app for clearing out a camera roll by swiping. Free, no ads, and the photos never leave the phone. Case study and install guide.">
+<title>Photo Swipe</title>
+<meta name="description" content="Clear your camera roll by swiping. Right keeps, left bins, nothing goes till you say so. Free iPhone app, no ads, photos never leave your phone.">
 <meta name="robots" content="noindex">
 <link rel="icon" href="img/favicon.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Libre+Franklin:wght@400;500;600&family=Newsreader:opsz,wght@6..72,400;6..72,500;6..72,600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@500&family=Libre+Franklin:wght@400;500;600;700&family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;1,6..72,400;1,6..72,500&display=swap" rel="stylesheet">
 <style>
   :root {
-    --bp-sm: 40rem; --bp-md: 48rem; --bp-lg: 64rem; --bp-xl: 80rem;
-    --measure: 88rem; --gutter: 1.25rem;
-    --canvas: #0b0d0f; --card: #16191c; --ink: #f4f1ea; --muted: rgba(244, 241, 234, .62);
-    --hairline: rgba(244, 241, 234, .12); --keep: #6fcf97; --delete: #ff6b5e;
+    --measure: 96rem; --gutter: 1.25rem;
+    --canvas: #0b0d0f; --card: #16191c; --ink: #f4f1ea; --muted: rgba(244, 241, 234, .6);
+    --hairline: rgba(244, 241, 234, .12); --keep: #6fcf97; --bin: #ff6b5e;
     --display: "Newsreader", Georgia, serif;
     --text: "Libre Franklin", system-ui, sans-serif;
     --num: "IBM Plex Mono", ui-monospace, monospace;
     --ease: cubic-bezier(.23, 1, .32, 1);
   }
-  @media (min-width: 48rem) { :root { --gutter: 5rem; } }
+  @media (min-width: 48rem) { :root { --gutter: 4rem; } }
+  @media (min-width: 80rem) { :root { --gutter: 5rem; } }
   * { box-sizing: border-box; }
-  html { scroll-behavior: smooth; }
-  body { margin: 0; background: var(--canvas); color: var(--ink); font: 400 1.0625rem/1.65 var(--text); -webkit-font-smoothing: antialiased; }
-  ::selection { background: #3f6fb5; color: #fff; }
-  a { color: inherit; }
-  a[href], button { cursor: pointer; }
+  html { -webkit-text-size-adjust: 100%; }
+  html.lenis, html.lenis body { height: auto; }
+  .lenis.lenis-smooth { scroll-behavior: auto !important; }
+  body { margin: 0; background: var(--canvas); color: var(--ink); font: 400 1.0625rem/1.6 var(--text); -webkit-font-smoothing: antialiased; overflow-x: clip; }
+  ::selection { background: var(--keep); color: #0b0d0f; }
+  a { color: inherit; text-decoration: none; }
+  a[href], button, [role="button"] { cursor: pointer; }
   img { display: block; max-width: 100%; }
-  .layout-container { width: 100%; max-width: var(--measure); margin-inline: auto; padding-inline: var(--gutter); }
-  .layout-grid { display: grid; gap: 2rem; grid-template-columns: repeat(var(--cols, 1), minmax(0, 1fr)); }
-  @media (min-width: 40rem) { .layout-grid { grid-template-columns: repeat(var(--cols-sm, var(--cols, 1)), minmax(0, 1fr)); } }
-  @media (min-width: 64rem) { .layout-grid { grid-template-columns: repeat(var(--cols-lg, var(--cols-sm, var(--cols, 1))), minmax(0, 1fr)); } }
-  .eyebrow { font: 600 .75rem/1 var(--text); letter-spacing: .14em; text-transform: uppercase; color: var(--muted); margin: 0; }
-  h1, h2, h3 { font-family: var(--display); font-weight: 500; letter-spacing: -.01em; margin: 0; }
-  h1 { font-size: clamp(3.25rem, 9vw, 7rem); line-height: .95; }
-  h2 { font-size: clamp(2rem, 4.2vw, 3.5rem); line-height: 1.05; }
-  h3 { font-size: 1.5rem; line-height: 1.2; }
-  p { margin: 0; }
-  .lede { font-size: clamp(1.15rem, 1.6vw, 1.45rem); line-height: 1.5; color: var(--muted); max-width: 34rem; }
+  .wrap { width: 100%; max-width: var(--measure); margin-inline: auto; padding-inline: var(--gutter); }
   .num { font-family: var(--num); font-variant-numeric: tabular-nums; }
-  section { padding-block: clamp(4rem, 9vw, 8rem); border-top: 1px solid var(--hairline); }
-  nav { display: flex; justify-content: space-between; align-items: center; padding-block: 1.5rem; font-size: .95rem; }
-  nav a { text-decoration: none; color: var(--muted); transition: color .2s var(--ease); }
-  nav a:hover { color: var(--ink); }
-  nav .brand { display: flex; align-items: center; gap: .75rem; color: var(--ink); font-weight: 500; }
-  nav .brand img { width: 30px; height: 30px; border-radius: 8px; }
-  nav .links { display: flex; gap: 1.75rem; }
+  em { font-style: italic; }
 
-  .hero { padding-block: clamp(2rem, 6vw, 5rem) clamp(4rem, 8vw, 7rem); align-items: center; }
-  .hero-copy { display: grid; gap: 1.75rem; }
-  .actions { display: flex; flex-wrap: wrap; gap: .75rem; margin-top: .5rem; }
-  .btn { display: inline-flex; align-items: center; min-height: 3.25rem; padding: 0 1.6rem; border-radius: 999px; text-decoration: none; font-weight: 600; font-size: 1rem; transition: transform .16s ease-out, background .2s var(--ease); }
-  .btn:active { transform: scale(.97); }
-  .btn-primary { background: var(--ink); color: var(--canvas); }
-  .btn-quiet { border: 1px solid var(--hairline); }
-  .btn-quiet:hover { background: var(--card); }
-  .facts { display: flex; flex-wrap: wrap; gap: 2.5rem; margin-top: 1.25rem; }
-  .facts div { display: grid; gap: .5rem; }
-  .facts b { font: 500 1.6rem/1 var(--num); }
+  /* ---------- nav ---------- */
+  .nav { position: fixed; inset: 0 0 auto; z-index: 50; padding-block: 1.1rem; transition: background .4s var(--ease), backdrop-filter .4s; }
+  .nav.solid { background: rgba(11, 13, 15, .72); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); }
+  .nav .wrap { display: flex; align-items: center; justify-content: space-between; }
+  .brand { display: flex; align-items: center; gap: .65rem; font-weight: 600; }
+  .brand img { width: 32px; height: 32px; border-radius: 8px; }
+  .pill { display: inline-flex; align-items: center; gap: .55rem; padding: .6rem 1.1rem; border-radius: 999px; border: 1px solid var(--hairline); font-weight: 600; font-size: .95rem; transition: background .3s, color .3s, border-color .3s; }
+  .pill:hover { background: var(--ink); color: var(--canvas); border-color: var(--ink); }
 
-  .phone { width: min(100%, 21.5rem); margin-inline: auto; border-radius: 3rem; padding: .6rem; background: #000; box-shadow: 0 0 0 1px rgba(255, 255, 255, .14), 0 40px 80px rgba(0, 0, 0, .6); }
-  .phone-screen { position: relative; aspect-ratio: 603 / 1311; border-radius: 2.45rem; overflow: hidden; background: var(--canvas); }
-  .phone-screen img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; opacity: 0; transition: opacity .5s var(--ease); }
-  .phone-screen img.on { opacity: 1; }
-  .hero .phone { transform: rotate(2.5deg); }
+  /* ---------- hero ---------- */
+  .hero { position: relative; min-height: 100svh; display: flex; align-items: center; padding-block: 7rem 4rem; overflow: hidden; }
+  .hero .wrap { display: grid; gap: 3rem; grid-template-columns: minmax(0, 1fr); align-items: center; }
+  @media (min-width: 64rem) { .hero .wrap { grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr); } }
+  .kicker { display: inline-flex; align-items: center; gap: .6rem; font-weight: 600; font-size: .85rem; letter-spacing: .14em; text-transform: uppercase; color: var(--muted); }
+  .kicker i { width: 8px; height: 8px; border-radius: 50%; background: var(--keep); box-shadow: 0 0 0 0 var(--keep); animation: ping 2.2s infinite; }
+  @keyframes ping { 0% { box-shadow: 0 0 0 0 rgba(111, 207, 151, .6); } 80%, 100% { box-shadow: 0 0 0 12px rgba(111, 207, 151, 0); } }
+  h1 { font-family: var(--display); font-weight: 400; font-size: clamp(3.3rem, 8.4vw, 9rem); line-height: .88; letter-spacing: -.035em; margin: 1.2rem 0 0; }
+  h1 .line { display: block; overflow: hidden; padding-bottom: .08em; white-space: nowrap; }
+  h1 .line > span { display: inline-block; }
+  h1 em { color: var(--keep); }
+  .lede { font-size: clamp(1.15rem, 1.6vw, 1.45rem); color: var(--muted); margin: 1.8rem 0 0; max-width: 40ch; }
+  .lede b { color: var(--ink); font-weight: 600; }
+  .actions { display: flex; flex-wrap: wrap; gap: .8rem; margin-top: 2.2rem; align-items: center; }
+  .btn { display: inline-flex; align-items: center; gap: .65rem; padding: 1.05rem 1.6rem; border-radius: 999px; font-weight: 700; font-size: 1.05rem; transition: transform .3s var(--ease), background .3s, box-shadow .3s; will-change: transform; }
+  .btn-go { background: var(--keep); color: #0b0d0f; box-shadow: 0 18px 40px -18px rgba(111, 207, 151, .9); }
+  .btn-go:hover { box-shadow: 0 24px 60px -16px rgba(111, 207, 151, 1); }
+  .btn-go svg { transition: transform .35s var(--ease); }
+  .btn-go:hover svg { transform: translateX(4px) rotate(-45deg); }
+  .btn-note { font-size: .95rem; color: var(--muted); }
+  .tally { display: flex; gap: 2.4rem; margin-top: 2.6rem; }
+  .tally div { display: flex; flex-direction: column; gap: .2rem; }
+  .tally .num { font-size: clamp(2rem, 3.4vw, 3rem); line-height: 1; }
+  .tally .k { color: var(--keep); } .tally .b { color: var(--bin); }
+  .tally small { font-size: .78rem; font-weight: 600; letter-spacing: .14em; text-transform: uppercase; color: var(--muted); }
 
-  .walk { align-items: start; }
-  .walk-phone { position: sticky; top: 8vh; min-width: 0; overflow: hidden; padding: 1rem 0 3rem; }
-  .steps { display: grid; }
-  .step { min-height: 78vh; display: grid; align-content: center; gap: 1rem; opacity: .32; transition: opacity .4s var(--ease); }
-  .step.on { opacity: 1; }
-  .step p { color: var(--muted); max-width: 30rem; }
-  .step .num { font-size: .85rem; color: var(--muted); }
-  .step-shot { display: none; }
+  /* the giant word behind the phone */
+  .stage { position: relative; display: grid; place-items: center; min-height: min(80svh, 760px); }
+  .bigword { position: absolute; inset: 0; display: grid; place-items: center; pointer-events: none; z-index: 0; }
+  .bigword span { font-family: var(--display); font-style: italic; font-size: clamp(9rem, 26vw, 26rem); line-height: 1; letter-spacing: -.05em; color: transparent; -webkit-text-stroke: 2px var(--hairline); opacity: .9; }
+  .bigword span.k { -webkit-text-stroke-color: rgba(111, 207, 151, .55); }
+  .bigword span.b { -webkit-text-stroke-color: rgba(255, 107, 94, .55); }
+  .glow { position: absolute; width: 70%; aspect-ratio: 1; border-radius: 50%; filter: blur(80px); opacity: .35; background: radial-gradient(circle, var(--keep), transparent 65%); transition: background .5s; z-index: 0; }
+  .glow.b { background: radial-gradient(circle, var(--bin), transparent 65%); }
 
-  .story { gap: 3rem; }
-  .story p + p { margin-top: 1.1rem; }
-  .story .body { color: var(--muted); }
-  .story .body strong { color: var(--ink); font-weight: 600; }
-  .table { border-top: 1px solid var(--hairline); }
-  .row { display: grid; grid-template-columns: minmax(0, 11rem) minmax(0, 1fr); gap: 1.5rem; padding-block: 1.1rem; border-bottom: 1px solid var(--hairline); }
-  .row dt { font-weight: 600; }
-  .row dd { margin: 0; color: var(--muted); }
+  .phone { position: relative; z-index: 1; width: min(320px, 70vw, calc((100svh - 11rem) * 9 / 19.5)); aspect-ratio: 9 / 19.5; border-radius: 52px; padding: 12px; background: #050607; box-shadow: 0 0 0 1px rgba(255, 255, 255, .12) inset, 0 60px 120px -40px rgba(0, 0, 0, .9), 0 0 0 9px #1b1e22, 0 0 0 10px rgba(255, 255, 255, .08); }
+  .screen { position: relative; height: 100%; border-radius: 41px; overflow: hidden; background: #0b0d0f; }
+  .island { position: absolute; top: 11px; left: 50%; translate: -50% 0; width: 32%; height: 26px; border-radius: 99px; background: #000; z-index: 5; }
+  .deck-top { position: absolute; inset: 52px 18px auto; display: flex; justify-content: space-between; font-size: .72rem; font-weight: 600; letter-spacing: .14em; text-transform: uppercase; color: var(--muted); z-index: 4; }
+  .deck { position: absolute; inset: 82px 14px 96px; }
+  .card { position: absolute; inset: 0; border-radius: 22px; overflow: hidden; background: #222 center / cover no-repeat; box-shadow: 0 20px 40px -20px rgba(0, 0, 0, .8); touch-action: none; user-select: none; -webkit-user-select: none; }
+  .card .stamp { position: absolute; top: 22px; padding: .3rem .7rem; border: 3px solid; border-radius: 10px; font: 700 1.5rem/1 var(--text); letter-spacing: .08em; opacity: 0; }
+  .card .stamp.k { left: 18px; color: var(--keep); border-color: var(--keep); rotate: -14deg; }
+  .card .stamp.b { right: 18px; color: var(--bin); border-color: var(--bin); rotate: 14deg; }
+  .card.top { cursor: grab; } .card.top:active { cursor: grabbing; }
+  .ctrls { position: absolute; left: 0; right: 0; bottom: 24px; display: flex; justify-content: center; gap: 1.6rem; z-index: 4; }
+  .ctrls button { width: 54px; height: 54px; border-radius: 50%; border: 0; display: grid; place-items: center; background: #1a1d21; transition: transform .2s var(--ease), background .2s; }
+  .ctrls button:active { transform: scale(.9); }
+  .ctrls .x { color: var(--bin); } .ctrls .ok { color: var(--keep); }
+  .ctrls .x:hover { background: rgba(255, 107, 94, .18); } .ctrls .ok:hover { background: rgba(111, 207, 151, .18); }
+  .hint { position: absolute; z-index: 3; bottom: -2.6rem; left: 50%; translate: -50% 0; font-size: .85rem; color: var(--muted); white-space: nowrap; display: flex; gap: .5rem; align-items: center; }
+  .hint svg { animation: nudge 1.6s var(--ease) infinite; }
+  @keyframes nudge { 0%, 100% { transform: translateX(-6px); } 50% { transform: translateX(6px); } }
 
-  .safe li { list-style: none; padding-block: 1.25rem; border-top: 1px solid var(--hairline); display: grid; gap: .35rem; }
-  .safe ul { margin: 0; padding: 0; }
-  .safe li span { color: var(--muted); }
+  /* ---------- storm (pinned scene) ---------- */
+  .storm { position: relative; height: 100svh; overflow: hidden; }
+  .storm .phw { position: absolute; width: clamp(110px, 13vw, 210px); aspect-ratio: 3 / 4; will-change: transform; }
+  .storm .ph { position: absolute; inset: 0; border-radius: 16px; background: #222 center / cover; box-shadow: 0 30px 60px -30px rgba(0, 0, 0, .9); will-change: transform; }
+  .storm .ph::after { content: ""; position: absolute; inset: 0; border-radius: inherit; box-shadow: 0 0 0 1px rgba(255, 255, 255, .08) inset; }
+  .storm-copy { position: absolute; inset: 0; display: grid; place-items: center; text-align: center; pointer-events: none; z-index: 3; }
+  .storm-copy h2 { font-family: var(--display); font-weight: 400; font-size: clamp(3.2rem, 9vw, 9rem); line-height: .9; letter-spacing: -.035em; margin: 0; text-shadow: 0 10px 60px rgba(0, 0, 0, .9); }
+  .storm-copy h2 em { color: var(--keep); }
+  .storm-copy .two { position: absolute; opacity: 0; }
+  .storm-copy::before { content: ""; position: absolute; width: min(70vw, 900px); aspect-ratio: 2 / 1; border-radius: 50%; background: radial-gradient(closest-side, rgba(11, 13, 15, .78), transparent); }
+  .storm-copy h2 { position: relative; }
+  .pile { position: absolute; bottom: 9vh; z-index: 2; font: 700 .9rem/1 var(--text); letter-spacing: .16em; text-transform: uppercase; opacity: 0; display: flex; align-items: center; gap: .6rem; }
+  .pile.k { right: var(--gutter); color: var(--keep); } .pile.b { left: var(--gutter); color: var(--bin); }
+  .pile .num { font-size: 2.6rem; letter-spacing: 0; }
 
-  ol.install { counter-reset: s; list-style: none; margin: 0; padding: 0; }
-  ol.install li { counter-increment: s; display: grid; grid-template-columns: 3rem minmax(0, 1fr); gap: 1rem; padding-block: 1.1rem; border-top: 1px solid var(--hairline); }
-  ol.install li::before { content: counter(s, decimal-leading-zero); font: 500 .95rem/1.8 var(--num); color: var(--muted); }
-  ol.install b { font-weight: 600; }
-  ol.install span { color: var(--muted); }
-  .note { margin-top: 2rem; padding: 1.25rem 1.5rem; border-radius: 1rem; background: var(--card); color: var(--muted); }
-  .note strong { color: var(--ink); }
+  /* ---------- screens ---------- */
+  .screens { padding-block: 9rem 6rem; }
+  .sec-title { font-family: var(--display); font-weight: 400; font-size: clamp(2.8rem, 6.5vw, 6rem); line-height: .92; letter-spacing: -.03em; margin: 0 0 4rem; }
+  .sec-title em { color: var(--keep); }
+  .shots { display: grid; gap: 2.5rem 2rem; grid-template-columns: repeat(auto-fit, minmax(min(15rem, 100%), 1fr)); perspective: 1400px; }
+  .shot { min-width: 0; }
+  .shot .word { font-family: var(--display); font-style: italic; font-size: clamp(2.4rem, 3.6vw, 3.4rem); line-height: 1; letter-spacing: -.03em; margin-bottom: .45rem; }
+  .shot p { margin: 0 0 1.4rem; color: var(--muted); font-size: 1rem; }
+  .mini { border-radius: 38px; padding: 9px; background: #050607; box-shadow: 0 0 0 1px rgba(255, 255, 255, .1) inset, 0 50px 90px -40px rgba(0, 0, 0, .95), 0 0 0 6px #1b1e22; transform-style: preserve-3d; transition: transform .6s var(--ease); }
+  .mini img { border-radius: 30px; width: 100%; aspect-ratio: 804 / 1748; object-fit: cover; object-position: top; }
+  .shot:nth-child(2) .word { color: var(--keep); } .shot:nth-child(3) .word { color: var(--bin); }
 
-  footer { border-top: 1px solid var(--hairline); padding-block: 2.5rem; color: var(--muted); font-size: .95rem; display: flex; flex-wrap: wrap; gap: 1rem 2rem; justify-content: space-between; }
+  /* ---------- marquee ---------- */
+  .marquee { padding-block: 4rem; border-block: 1px solid var(--hairline); overflow: hidden; }
+  .track { display: flex; width: max-content; gap: 3rem; font-family: var(--display); font-size: clamp(3.5rem, 9vw, 8.5rem); line-height: 1; letter-spacing: -.03em; white-space: nowrap; will-change: transform; }
+  .track + .track { margin-top: 1rem; }
+  .track span { display: inline-flex; align-items: center; gap: 3rem; }
+  .track .o { color: transparent; -webkit-text-stroke: 1.5px var(--muted); font-style: italic; }
+  .track i { width: .32em; height: .32em; border-radius: 50%; background: var(--keep); display: inline-block; }
+  .track.rev i { background: var(--bin); }
 
-  .reveal { opacity: 0; transform: translateY(18px); transition: opacity .7s var(--ease), transform .7s var(--ease); transition-delay: calc(var(--i, 0) * 70ms); }
-  .reveal.in { opacity: 1; transform: none; }
+  /* ---------- cta ---------- */
+  .cta { position: relative; padding-block: 10rem 8rem; text-align: center; overflow: hidden; }
+  .cta h2 { font-family: var(--display); font-weight: 400; font-size: clamp(5rem, 20vw, 19rem); line-height: .82; letter-spacing: -.05em; margin: 0; }
+  .cta h2 em { color: var(--keep); }
+  .cta .actions { justify-content: center; margin-top: 3rem; }
+  .cta .btn-go { font-size: 1.2rem; padding: 1.3rem 2.2rem; }
+  .cta .small { margin-top: 1.4rem; color: var(--muted); font-size: 1rem; }
+  .cta .small a { color: var(--ink); border-bottom: 1px solid var(--hairline); }
+  .cta .small a:hover { border-color: var(--ink); }
+  .orbit { position: absolute; inset: 0; pointer-events: none; z-index: -1; }
+  .orbit .ph { position: absolute; width: clamp(80px, 9vw, 150px); aspect-ratio: 3 / 4; border-radius: 14px; background: #222 center / cover; opacity: .55; }
 
-  @media (max-width: 63.99rem) {
-    nav .links a:not(.keep) { display: none; }
-    .hero .phone { transform: none; margin-top: 1rem; }
-    .walk-phone { display: none; }
-    .step { min-height: 0; opacity: 1; padding-block: 2rem; border-top: 1px solid var(--hairline); }
-    .step-shot { display: block; width: min(100%, 17rem); border-radius: 1.75rem; margin-top: 1rem; box-shadow: 0 0 0 1px rgba(255, 255, 255, .14); }
-    .row { grid-template-columns: minmax(0, 1fr); gap: .25rem; }
-  }
+  footer { border-top: 1px solid var(--hairline); padding-block: 2rem; font-size: .92rem; color: var(--muted); }
+  footer .wrap { display: flex; flex-wrap: wrap; gap: 1rem; justify-content: space-between; }
+  footer a { color: var(--ink); }
+
+  @media (max-width: 63.99rem) { .hero .tally, .hero .btn-note { display: none; } .hero { padding-block: 6rem 4rem; } .stage { min-height: 0; padding-bottom: 3rem; } }
   @media (prefers-reduced-motion: reduce) {
-    html { scroll-behavior: auto; }
-    .reveal { opacity: 1; transform: none; transition: none; }
-    .step { opacity: 1; transition: none; }
-    .phone-screen img { transition: none; }
-    .hero .phone { transform: none; }
+    .kicker i, .hint svg { animation: none; }
+    .storm { height: auto; padding-block: 6rem; }
+    .storm .phw { position: relative; display: inline-block; margin: .4rem; left: auto !important; top: auto !important; }
+    .storm-copy { position: relative; margin-bottom: 2rem; }
+    .storm-copy .two, .pile { display: none; }
   }
 </style>
 </head>
 <body>
 
-<header class="layout-container">
-  <nav>
+<header class="nav" id="nav">
+  <div class="wrap">
     <a class="brand" href="https://www.warrenlimzf.com/" target="_blank" rel="noopener"><img src="img/icon.png" alt="">Photo Swipe</a>
-    <div class="links">
-      <a href="#how">How it works</a>
-      <a href="#built">How it was built</a>
-      <a href="#safe">Is it safe</a>
-      <a href="#install">Install</a>
-      <a class="keep" href="https://github.com/warrenlimzf/photo-swipe" target="_blank" rel="noopener">GitHub</a>
-    </div>
-  </nav>
-
-  <div class="hero layout-grid" style="--cols:1; --cols-lg:2">
-    <div class="hero-copy">
-      <p class="eyebrow reveal">iPhone app · October 2026</p>
-      <h1 class="reveal" style="--i:1">Photo Swipe</h1>
-      <p class="lede reveal" style="--i:2">Clear out a camera roll by swiping. Right keeps a photo, left bins it, and nothing goes until you've looked over the pile.</p>
-      <div class="actions reveal" style="--i:3">
-        <a class="btn btn-primary" href="https://github.com/warrenlimzf/photo-swipe" target="_blank" rel="noopener">Get the code on GitHub</a>
-        <a class="btn btn-quiet" href="#install">How to install</a>
-      </div>
-      <div class="facts reveal" style="--i:4">
-        <div><b>0</b><p class="eyebrow">Ads or sign-ups</p></div>
-        <div><b>0</b><p class="eyebrow">Photos leave the phone</p></div>
-        <div><b>11</b><p class="eyebrow">Automated tests</p></div>
-      </div>
-    </div>
-    <div class="reveal" style="--i:2; min-width:0">
-      <div class="phone"><div class="phone-screen"><img class="on" src="img/library.jpg" alt="The library screen: three figures, an On this day strip and the first month"></div></div>
-    </div>
+    <a class="pill" href="https://github.com/warrenlimzf/photo-swipe" target="_blank" rel="noopener">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 .5a11.5 11.5 0 0 0-3.64 22.42c.58.1.79-.25.79-.56v-2c-3.2.7-3.88-1.37-3.88-1.37-.52-1.33-1.28-1.69-1.28-1.69-1.05-.72.08-.7.08-.7 1.16.08 1.77 1.19 1.77 1.19 1.03 1.77 2.7 1.26 3.36.96.1-.75.4-1.26.73-1.55-2.55-.29-5.24-1.28-5.24-5.68 0-1.26.45-2.28 1.19-3.09-.12-.29-.52-1.46.11-3.05 0 0 .97-.31 3.17 1.18a11 11 0 0 1 5.77 0c2.2-1.49 3.17-1.18 3.17-1.18.63 1.59.23 2.76.11 3.05.74.81 1.19 1.83 1.19 3.09 0 4.41-2.69 5.38-5.26 5.67.41.36.78 1.06.78 2.14v3.17c0 .31.21.67.8.56A11.5 11.5 0 0 0 12 .5Z"/></svg>
+      GitHub
+    </a>
   </div>
 </header>
 
-<section id="how">
-  <div class="layout-container">
-    <p class="eyebrow">How it works</p>
-    <div class="walk layout-grid" style="--cols:1; --cols-lg:2; margin-top:1rem">
-      <div class="steps">
-        <article class="step on" data-shot="0">
-          <span class="num">01</span>
-          <h2>Your library, a month at a time</h2>
-          <p>Every month shows as a block of its own photos with a thin line of progress under it. Pick one and start. Finished months turn grey and get a tick.</p>
-          <img class="step-shot" src="img/months.jpg" alt="Months shown as mosaics of photos" loading="lazy">
-        </article>
-        <article class="step" data-shot="1">
-          <span class="num">02</span>
-          <h2>Swipe right to keep, left to bin</h2>
-          <p>One photo at a time, at its own shape. A quick flick is enough. Undo steps back as far as you like, and a bookmark parks the ones you can't decide on. Tap an emoji under the photo, like ✈️, and every photo you keep also goes into that album in Apple Photos. Open an album to favourite or move many photos at once.</p>
-          <img class="step-shot" src="img/swipe.jpg" alt="A photo card with keep and delete buttons" loading="lazy">
-        </article>
-        <article class="step" data-shot="2">
-          <span class="num">03</span>
-          <h2>Look it over before anything goes</h2>
-          <p>Swiping only marks a photo. The marked ones wait in a grid where a tap rescues any of them. Deleting takes your tap, then Apple's own confirmation.</p>
-          <img class="step-shot" src="img/review.jpg" alt="The review grid with a delete button" loading="lazy">
-        </article>
-        <article class="step" data-shot="3">
-          <span class="num">04</span>
-          <h2>Then see what you got back</h2>
-          <p>The library keeps count of the space freed, how much you've reviewed, and how many days in a row you've kept at it.</p>
-          <img class="step-shot" src="img/library.jpg" alt="The library screen with the running totals" loading="lazy">
-        </article>
+<main>
+  <!-- HERO: the app, live. Job: you use it before you read a word. -->
+  <section class="hero">
+    <div class="wrap">
+      <div>
+        <span class="kicker reveal"><i></i>Free iPhone app</span>
+        <h1 aria-label="Swipe your camera roll clean.">
+          <span class="line"><span>Swipe your</span></span>
+          <span class="line"><span>camera roll</span></span>
+          <span class="line"><span><em>clean.</em></span></span>
+        </h1>
+        <p class="lede reveal"><b>Right keeps. Left bins.</b> Nothing goes till you say so.</p>
+        <div class="actions reveal">
+          <a class="btn btn-go magnetic" href="https://github.com/warrenlimzf/photo-swipe" target="_blank" rel="noopener">Get it free
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a>
+          <span class="btn-note">No ads. No account. No upload.</span>
+        </div>
+        <div class="tally reveal" aria-live="polite">
+          <div><span class="num k" id="kept">0</span><small>Kept</small></div>
+          <div><span class="num b" id="binned">0</span><small>Binned</small></div>
+        </div>
       </div>
-      <div class="walk-phone">
-        <div class="phone"><div class="phone-screen" id="walk-screen">
-          <img class="on" src="img/months.jpg" alt="">
-          <img src="img/swipe.jpg" alt="">
-          <img src="img/review.jpg" alt="">
-          <img src="img/library.jpg" alt="">
-        </div></div>
+
+      <div class="stage">
+        <div class="glow" id="glow"></div>
+        <div class="bigword" aria-hidden="true"><span id="bigword">swipe</span></div>
+        <div class="phone" id="phone">
+          <div class="screen">
+            <span class="island"></span>
+            <div class="deck-top"><span>October 2026</span><span class="num" id="left">21 left</span></div>
+            <div class="deck" id="deck"></div>
+            <div class="ctrls">
+              <button class="x" id="btn-bin" aria-label="Bin this photo"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"/></svg></button>
+              <button class="ok" id="btn-keep" aria-label="Keep this photo"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12.5 4.5 4.5L19 7.5"/></svg></button>
+            </div>
+          </div>
+          <div class="hint"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M8 12h8M5 9l-3 3 3 3M19 9l3 3-3 3"/></svg>Go on, drag a photo</div>
+        </div>
       </div>
     </div>
-  </div>
-</section>
+  </section>
 
-<section id="built">
-  <div class="layout-container">
-    <div class="story layout-grid" style="--cols:1; --cols-lg:2">
-      <div>
-        <p class="eyebrow">How it was built</p>
-        <h2 style="margin-top:1rem">I set the brief. Claude Code wrote the Swift.</h2>
-      </div>
-      <div class="body">
-        <p>I study finance. I'm not a software engineer and I can't write Swift. What I can do is describe what I want, judge what comes back, and say no.</p>
-        <p>The idea came from a swipe-to-clean app I'd tried and liked, until the weekly subscription. I wanted the same loop on my own phone with no paywall, so I asked <strong>Claude Code</strong> to build one from scratch in a single sitting on 14 October 2026.</p>
-        <p>The code was the quick part. The first design came back as a navy card with stat tiles on cream, and I threw it out: it looked machine-made. The second attempt started from a different question, which was what a photo app should look like when the photos are the point. That gave the version here: <strong>black, photos edge to edge, almost no interface</strong>.</p>
-        <p>The other thing I pushed on was feel. The first build made you wait a quarter of a second between swipes. Now a swipe counts the instant you let go, and the old card flies off on its own while the next one is already live.</p>
+  <!-- STORM: the signature scene. Job: shows the whole idea, a mess sorted into two piles, with no words. -->
+  <section class="storm" id="storm" aria-label="A pile of photos sorted into keep and bin">
+    <div class="storm-copy">
+      <h2 class="one">Thousands<br>of photos.</h2>
+      <h2 class="two">One <em>thumb.</em></h2>
+    </div>
+    <div class="pile b"><span class="num" id="pb">0</span>binned</div>
+    <div class="pile k">kept<span class="num" id="pk">0</span></div>
+  </section>
+
+  <!-- SCREENS: what is inside, one word each. -->
+  <section class="screens">
+    <div class="wrap">
+      <h2 class="sec-title reveal">Four screens.<br><em>That's the whole app.</em></h2>
+      <div class="shots">
+        <div class="shot reveal-up"><div class="word">Months.</div><p>Your library, one month at a time.</p><div class="mini tilt"><img src="img/v13-todo.jpg" alt="The library, split into months" loading="lazy"></div></div>
+        <div class="shot reveal-up"><div class="word">Swipe.</div><p>One photo. One flick. Undo any time.</p><div class="mini tilt"><img src="img/swipe.jpg" alt="Swiping through a month" loading="lazy"></div></div>
+        <div class="shot reveal-up"><div class="word">Review.</div><p>The bin waits for one last look.</p><div class="mini tilt"><img src="img/review.jpg" alt="The review grid before deleting" loading="lazy"></div></div>
+        <div class="shot reveal-up"><div class="word">Albums.</div><p>Tap an emoji, swipe, it's filed.</p><div class="mini tilt"><img src="img/v13-home.jpg" alt="Emoji albums on the home screen" loading="lazy"></div></div>
       </div>
     </div>
-    <dl class="table" style="margin-top:4rem">
-      <div class="row"><dt>Swift and SwiftUI</dt><dd>Apple's language and its toolkit for screens, gestures and animation.</dd></div>
-      <div class="row"><dt>PhotoKit</dt><dd>Apple's framework for reading the photo library and asking to delete from it. One file in the app talks to it.</dd></div>
-      <div class="row"><dt>Xcode</dt><dd>Apple's free tool that turns the code into an app and puts it on a phone.</dd></div>
-      <div class="row"><dt>No outside code</dt><dd>Nothing third-party is bundled, so there is nothing in it I haven't seen described.</dd></div>
-      <div class="row"><dt>Tests</dt><dd><span class="num">11</span> automated checks on the rules: swipes, undo, month grouping, On this day and the streak.</dd></div>
-    </dl>
-  </div>
-</section>
+  </section>
 
-<section id="safe" class="safe">
-  <div class="layout-container">
-    <div class="layout-grid" style="--cols:1; --cols-lg:2; gap:3rem">
-      <div>
-        <p class="eyebrow">Is it safe</p>
-        <h2 style="margin-top:1rem">It can't send your photos anywhere, because it never goes online.</h2>
+  <!-- MARQUEE: the promises, too big to miss. -->
+  <section class="marquee" aria-label="No ads, no account, no uploads, free">
+    <div class="track" id="t1"><span>No ads <i></i><em class="o">no account</em> <i></i>No uploads <i></i><em class="o">free forever</em> <i></i></span><span aria-hidden="true">No ads <i></i><em class="o">no account</em> <i></i>No uploads <i></i><em class="o">free forever</em> <i></i></span></div>
+    <div class="track rev" id="t2"><span><em class="o">your photos</em> <i></i>stay on <i></i><em class="o">your phone</em> <i></i>always <i></i></span><span aria-hidden="true"><em class="o">your photos</em> <i></i>stay on <i></i><em class="o">your phone</em> <i></i>always <i></i></span></div>
+  </section>
+
+  <!-- CTA -->
+  <section class="cta">
+    <div class="orbit" id="orbit" aria-hidden="true"></div>
+    <div class="wrap">
+      <h2 class="reveal">Get <em>it.</em></h2>
+      <div class="actions reveal">
+        <a class="btn btn-go magnetic" href="https://github.com/warrenlimzf/photo-swipe#-install-step-by-step" target="_blank" rel="noopener">Install from GitHub
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a>
       </div>
-      <ul>
-        <li><b>No internet access.</b><span>There is no networking code in the app. The source is public, so anyone can check.</span></li>
-        <li><b>It can't delete on its own.</b><span>Deleting needs your tap in the review grid and then iOS's own prompt, which an app cannot skip.</span></li>
-        <li><b>Deleted photos can come back.</b><span>They sit in Recently Deleted in the Photos app for <span class="num">30</span> days.</span></li>
-        <li><b>No account, ads or tracking.</b><span>All it stores is one small file of your decisions, on the phone.</span></li>
-        <li><b>One honest limit.</b><span>It has been used on my phone, not tested across many. Go gently the first time.</span></li>
-      </ul>
+      <p class="small reveal">Free. Needs a Mac. The <a href="https://github.com/warrenlimzf/photo-swipe#-install-step-by-step" target="_blank" rel="noopener">step-by-step guide</a> and <a href="https://github.com/warrenlimzf/photo-swipe#-how-it-was-built" target="_blank" rel="noopener">how it was built</a> live on GitHub.</p>
     </div>
-  </div>
-</section>
+  </section>
+</main>
 
-<section id="install">
-  <div class="layout-container">
-    <div class="layout-grid" style="--cols:1; --cols-lg:2; gap:3rem">
-      <div>
-        <p class="eyebrow">Install</p>
-        <h2 style="margin-top:1rem">It isn't on the App Store, so you build it yourself.</h2>
-        <p class="lede" style="margin-top:1.5rem">That is free, but it needs a Mac. Publishing to the App Store costs US$99 a year, which I haven't paid. The full walk-through, with every click, is in the README on GitHub.</p>
-        <div class="actions" style="margin-top:2rem"><a class="btn btn-primary" href="https://github.com/warrenlimzf/photo-swipe#-install-step-by-step" target="_blank" rel="noopener">Open the full guide</a></div>
-      </div>
-      <div>
-        <ol class="install">
-          <li><div><b>Install Xcode</b> <span>from the Mac App Store. It's Apple's, and free.</span></div></li>
-          <li><div><b>Download the code</b> <span>from GitHub and open <span class="num">PhotoSwipe.xcodeproj</span>.</span></div></li>
-          <li><div><b>Sign in with your Apple ID</b> <span>in Xcode and pick your name as the team.</span></div></li>
-          <li><div><b>Plug in your iPhone,</b> <span>trust the Mac, and turn on Developer Mode.</span></div></li>
-          <li><div><b>Press Run.</b> <span>Then trust yourself on the phone under VPN &amp; Device Management.</span></div></li>
-        </ol>
-        <p class="note"><strong>Good to know:</strong> an app installed this way stops opening after <span class="num">7</span> days. Plug in and press Run again to renew it. Your progress is kept. It also can't update itself, so click <strong>Watch</strong> on the <a href="https://github.com/warrenlimzf/photo-swipe#-getting-updates" target="_blank" rel="noopener">GitHub page</a> to get an email when a new version is out.</p>
-      </div>
-    </div>
-  </div>
-</section>
-
-<div class="layout-container">
-  <footer>
-    <span>Built by <a href="https://www.warrenlimzf.com/" target="_blank" rel="noopener">Warren Lim</a> with Claude Code. MIT licence.</span>
+<footer>
+  <div class="wrap">
+    <span>Made by <a href="https://www.warrenlimzf.com/" target="_blank" rel="noopener">Warren Lim</a> with Claude Code.</span>
     <a href="https://github.com/warrenlimzf/photo-swipe" target="_blank" rel="noopener">github.com/warrenlimzf/photo-swipe</a>
-  </footer>
-</div>
+  </div>
+</footer>
 
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/lenis@1.1.13/dist/lenis.min.js"></script>
 <script>
-  const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
-  const reveals = document.querySelectorAll('.reveal');
-  if (reduce || !('IntersectionObserver' in window)) {
-    reveals.forEach(el => el.classList.add('in'));
-  } else {
-    const io = new IntersectionObserver(entries => entries.forEach(e => {
-      if (e.isIntersecting) { e.target.classList.add('in'); io.unobserve(e.target); }
-    }), { threshold: 0.15 });
-    reveals.forEach(el => io.observe(el));
+(() => {
+  const PHOTOS = Array.from({ length: 21 }, (_, i) => `img/photos/p${String(i + 1).padStart(2, "0")}.jpg`);
+  const reduced = matchMedia("(prefers-reduced-motion: reduce)").matches;
+  const $ = (s) => document.querySelector(s);
+  const hasGsap = typeof gsap !== "undefined";
+  if (hasGsap && typeof ScrollTrigger !== "undefined") gsap.registerPlugin(ScrollTrigger);
 
-    // The phone stays put while the steps scroll past; the screen follows the step in view.
-    const shots = document.querySelectorAll('#walk-screen img');
-    const steps = document.querySelectorAll('.step');
-    const walk = new IntersectionObserver(entries => entries.forEach(e => {
-      if (!e.isIntersecting) return;
-      steps.forEach(s => s.classList.toggle('on', s === e.target));
-      shots.forEach((img, i) => img.classList.toggle('on', i === Number(e.target.dataset.shot)));
-    }), { rootMargin: '-45% 0px -45% 0px' });
-    steps.forEach(s => walk.observe(s));
+  // Nav turns solid once you leave the top.
+  const nav = $("#nav");
+  const onScroll = () => nav.classList.toggle("solid", scrollY > 40);
+  addEventListener("scroll", onScroll, { passive: true }); onScroll();
+
+  // Weighted scroll.
+  if (!reduced && typeof Lenis !== "undefined" && hasGsap) {
+    const lenis = new Lenis({ lerp: 0.09 });
+    lenis.on("scroll", ScrollTrigger.update);
+    gsap.ticker.add((t) => lenis.raf(t * 1000));
+    gsap.ticker.lagSmoothing(0);
   }
+
+  /* ---------------- the live deck ---------------- */
+  const deck = $("#deck"), big = $("#bigword"), glow = $("#glow");
+  let order = [...PHOTOS].sort(() => Math.random() - 0.5), kept = 0, binned = 0, busy = false, idleTimer, userTouched = false;
+  const keptEl = $("#kept"), binEl = $("#binned"), leftEl = $("#left");
+
+  function makeCard(src) {
+    const c = document.createElement("div");
+    c.className = "card";
+    c.style.backgroundImage = `url(${src})`;
+    c.innerHTML = '<span class="stamp k">KEEP</span><span class="stamp b">BIN</span>';
+    return c;
+  }
+  function fill() {
+    while (deck.children.length < 3) {
+      const src = order.shift(); order.push(src);
+      deck.prepend(makeCard(src));
+    }
+    [...deck.children].forEach((c, i, all) => {
+      const depth = all.length - 1 - i;
+      c.classList.toggle("top", depth === 0);
+      c.style.transition = "transform .45s var(--ease)";
+      c.style.transform = `translateY(${depth * -10}px) scale(${1 - depth * 0.05})`;
+      c.style.zIndex = 10 - depth;
+    });
+    bindDrag(deck.lastElementChild);
+  }
+  const bump = (el, n) => {
+    el.textContent = n;
+    if (hasGsap && !reduced) gsap.fromTo(el, { y: -14, scale: 1.25 }, { y: 0, scale: 1, duration: 0.5, ease: "back.out(3)" });
+  };
+  function flash(keep) {
+    big.textContent = keep ? "keep" : "bin";
+    big.className = keep ? "k" : "b";
+    glow.className = "glow" + (keep ? "" : " b");
+    if (hasGsap && !reduced) {
+      gsap.fromTo(big, { scale: 0.6, opacity: 0, rotate: keep ? -6 : 6 }, { scale: 1, opacity: 0.9, rotate: 0, duration: 0.6, ease: "expo.out" });
+      gsap.fromTo("#phone", { rotate: keep ? 2.5 : -2.5 }, { rotate: 0, duration: 0.8, ease: "elastic.out(1, 0.4)" });
+    }
+  }
+  function decide(keep, card = deck.lastElementChild) {
+    if (busy || !card) return; busy = true;
+    const dir = keep ? 1 : -1;
+    card.querySelector(keep ? ".stamp.k" : ".stamp.b").style.opacity = 1;
+    card.style.transition = "transform .55s cubic-bezier(.5,0,.75,0), opacity .55s";
+    card.style.transform = `translate(${dir * 520}px, -40px) rotate(${dir * 32}deg)`;
+    card.style.opacity = 0;
+    flash(keep);
+    if (keep) bump(keptEl, ++kept); else bump(binEl, ++binned);
+    leftEl.textContent = `${Math.max(0, 21 - ((kept + binned) % 21))} left`;
+    setTimeout(() => { card.remove(); fill(); busy = false; }, 420);
+  }
+  function bindDrag(card) {
+    if (!card || card.dataset.bound) return; card.dataset.bound = 1;
+    let x0 = 0, y0 = 0, dx = 0, dy = 0, down = false;
+    const kS = card.querySelector(".stamp.k"), bS = card.querySelector(".stamp.b");
+    card.addEventListener("pointerdown", (e) => { if (busy) return; down = true; userTouched = true; stopAuto(); x0 = e.clientX; y0 = e.clientY; card.setPointerCapture(e.pointerId); card.style.transition = "none"; });
+    card.addEventListener("pointermove", (e) => {
+      if (!down) return; dx = e.clientX - x0; dy = e.clientY - y0;
+      card.style.transform = `translate(${dx}px, ${dy * 0.4}px) rotate(${dx / 14}deg)`;
+      kS.style.opacity = Math.max(0, Math.min(1, dx / 90)); bS.style.opacity = Math.max(0, Math.min(1, -dx / 90));
+    });
+    const up = () => {
+      if (!down) return; down = false;
+      if (Math.abs(dx) > 90) decide(dx > 0, card);
+      else { card.style.transition = "transform .5s cubic-bezier(.34,1.56,.64,1)"; card.style.transform = ""; kS.style.opacity = bS.style.opacity = 0; }
+      dx = dy = 0; startAuto(4500);
+    };
+    card.addEventListener("pointerup", up); card.addEventListener("pointercancel", up);
+  }
+  $("#btn-keep").addEventListener("click", () => { userTouched = true; stopAuto(); decide(true); startAuto(4500); });
+  $("#btn-bin").addEventListener("click", () => { userTouched = true; stopAuto(); decide(false); startAuto(4500); });
+  addEventListener("keydown", (e) => { if (e.key === "ArrowRight") decide(true); if (e.key === "ArrowLeft") decide(false); });
+
+  // Auto-play so the hero is never still, until you take over.
+  let autoTimer;
+  function startAuto(delay = 1400) {
+    if (reduced) return; stopAuto();
+    idleTimer = setTimeout(function tick() {
+      if (document.hidden) { autoTimer = setTimeout(tick, 1000); return; }
+      decide(Math.random() > 0.38);
+      autoTimer = setTimeout(tick, 1500);
+    }, delay);
+  }
+  function stopAuto() { clearTimeout(idleTimer); clearTimeout(autoTimer); }
+  fill(); startAuto(1800);
+
+  /* ---------------- entrances ---------------- */
+  if (!hasGsap || reduced) return;
+
+  gsap.from("h1 .line > span", { yPercent: 110, rotate: 4, duration: 1.3, ease: "expo.out", stagger: 0.09, delay: 0.1 });
+  gsap.from(".hero .reveal", { y: 30, opacity: 0, duration: 1, ease: "expo.out", stagger: 0.08, delay: 0.45 });
+  gsap.from("#phone", { y: 160, rotate: 8, opacity: 0, duration: 1.6, ease: "expo.out", delay: 0.25 });
+  gsap.from(".bigword", { scale: 0.4, opacity: 0, duration: 1.6, ease: "expo.out", delay: 0.4 });
+  // Hero parallax: the phone drifts slower than the words as you leave.
+  gsap.to(".stage", { yPercent: -18, ease: "none", scrollTrigger: { trigger: ".hero", start: "top top", end: "bottom top", scrub: true } });
+  gsap.to(".hero h1", { yPercent: -30, ease: "none", scrollTrigger: { trigger: ".hero", start: "top top", end: "bottom top", scrub: true } });
+
+  /* ---------------- the storm (one pinned, scrubbed scene) ---------------- */
+  const storm = $("#storm");
+  const vw = () => storm.clientWidth, vh = () => storm.clientHeight;
+  const gutter = () => parseFloat(getComputedStyle(document.querySelector(".wrap")).paddingLeft) || 20;
+  // Each photo is a wrapper (where it sits, sorted by scroll) holding the picture (how it bursts in).
+  // Two elements so the two motions never fight over the same property.
+  const rnd = (a, b) => a + Math.random() * (b - a);
+  const wraps = PHOTOS.map((src, i) => {
+    const w = document.createElement("div"); w.className = "phw";
+    w.dataset.keep = i % 3 !== 0 ? 1 : 0; // two in three kept
+    w.dataset.x = rnd(-3, 90); w.dataset.y = rnd(-4, 80); w.dataset.r = rnd(-24, 24); w.dataset.s = rnd(0.85, 1.25);
+    w.style.left = w.dataset.x + "%"; w.style.top = w.dataset.y + "%";
+    const p = document.createElement("div"); p.className = "ph"; p.style.backgroundImage = `url(${src})`;
+    w.appendChild(p); storm.appendChild(w); return w;
+  });
+  const pics = wraps.map((w) => w.firstChild);
+  const keepN = wraps.filter((w) => w.dataset.keep === "1").length, binN = wraps.length - keepN;
+  gsap.set(wraps, { rotate: (i, w) => +w.dataset.r, scale: (i, w) => +w.dataset.s });
+  const tl = gsap.timeline({
+    scrollTrigger: { trigger: storm, start: "top top", end: "+=220%", pin: true, scrub: 0.8, anticipatePin: 1,
+      onUpdate: (st) => { const p = Math.min(1, Math.max(0, (st.progress - 0.3) / 0.5)); $("#pk").textContent = Math.round(p * keepN); $("#pb").textContent = Math.round(p * binN); } },
+  });
+  tl.fromTo(pics, { scale: 0, opacity: 0, rotate: () => rnd(-120, 120) }, { scale: 1, opacity: 1, rotate: 0, duration: 0.6, stagger: { each: 0.02, from: "random" }, ease: "back.out(1.6)" }, 0)
+    .fromTo(".storm-copy .one", { scale: 1.6, opacity: 0 }, { scale: 1, opacity: 1, duration: 0.5 }, 0.1)
+    .fromTo(".storm-copy .one", { scale: 1, opacity: 1 }, { scale: 0.7, opacity: 0, duration: 0.4, immediateRender: false }, 0.9)
+    .fromTo(wraps, {
+      left: (i, w) => w.dataset.x + "%", top: (i, w) => w.dataset.y + "%", rotate: (i, w) => +w.dataset.r, scale: (i, w) => +w.dataset.s,
+    }, {
+      left: (i, w) => { const g = gutter(), wd = w.offsetWidth; return w.dataset.keep === "1" ? vw() - g - wd * 0.9 - (i % 4) * 8 : g + (i % 4) * 8; },
+      top: (i) => vh() * 0.4 - (i % 7) * 7,
+      rotate: (i, w) => (w.dataset.keep === "1" ? 1 : -1) * (4 + (i % 5) * 3),
+      scale: 1, duration: 1.2, stagger: { each: 0.025, from: "random" }, ease: "power3.inOut", immediateRender: false,
+    }, 0.9)
+    .fromTo(".pile", { opacity: 0 }, { opacity: 1, duration: 0.3, immediateRender: false }, 1.6)
+    .fromTo(wraps.filter((w) => w.dataset.keep === "0"), { opacity: 1, filter: "grayscale(0)" }, { opacity: 0.3, filter: "grayscale(1)", duration: 0.4, immediateRender: false }, 2.0)
+    .fromTo(".storm-copy .two", { scale: 0.5, opacity: 0 }, { scale: 1, opacity: 1, duration: 0.6, ease: "back.out(2)", immediateRender: false }, 1.9)
+    .to({}, { duration: 0.4 });
+
+  /* ---------------- screens: tilt in, then follow the mouse ---------------- */
+  gsap.from(".sec-title", { y: 80, opacity: 0, duration: 1.2, ease: "expo.out", scrollTrigger: { trigger: ".screens", start: "top 75%" } });
+  gsap.utils.toArray(".shot").forEach((s, i) => {
+    gsap.from(s, { y: 180, rotateX: 35, rotateY: i % 2 ? -10 : 10, opacity: 0, duration: 1.4, ease: "expo.out", delay: i * 0.1,
+      scrollTrigger: { trigger: ".shots", start: "top 82%" } });
+  });
+  document.querySelectorAll(".tilt").forEach((el) => {
+    el.addEventListener("pointermove", (e) => {
+      const r = el.getBoundingClientRect(), x = (e.clientX - r.left) / r.width - 0.5, y = (e.clientY - r.top) / r.height - 0.5;
+      el.style.transform = `rotateY(${x * 18}deg) rotateX(${-y * 14}deg) translateZ(30px)`;
+    });
+    el.addEventListener("pointerleave", () => (el.style.transform = ""));
+  });
+
+  /* ---------------- marquee: drifts on its own, speeds and skews with your scroll ---------------- */
+  const tracks = [[$("#t1"), -1], [$("#t2"), 1]];
+  const pos = [null, null];
+  let vel = 0;
+  ScrollTrigger.create({ onUpdate: (s) => (vel = gsap.utils.clamp(-40, 40, s.getVelocity() / 120)) });
+  gsap.ticker.add(() => {
+    tracks.forEach(([el, dir], i) => {
+      const half = el.scrollWidth / 2;
+      if (pos[i] === null) pos[i] = dir > 0 ? -half : 0;
+      pos[i] += dir * (0.6 + Math.abs(vel) * 0.25);
+      if (dir < 0 && pos[i] <= -half) pos[i] += half;
+      if (dir > 0 && pos[i] >= 0) pos[i] -= half;
+      el.style.transform = `translateX(${pos[i]}px) skewX(${-vel * 0.4}deg)`;
+    });
+    vel *= 0.92;
+  });
+
+  /* ---------------- CTA: photos orbit in, the button pulls toward you ---------------- */
+  const orbit = $("#orbit");
+  PHOTOS.slice(0, 10).forEach((src, i) => {
+    const d = document.createElement("div"); d.className = "ph"; d.style.backgroundImage = `url(${src})`;
+    // Five down each side, never over the words in the middle.
+    const side = i % 2 ? 1 : -1, row = Math.floor(i / 2);
+    d.style.left = 50 + side * (34 + (row % 2) * 9) + "%"; d.style.top = 14 + row * 18 + "%";
+    d.style.rotate = rnd(-20, 20) + "deg"; d.style.translate = "-50% -50%";
+    orbit.appendChild(d);
+  });
+  gsap.from(".cta h2", { scale: 0.5, opacity: 0, duration: 1.4, ease: "expo.out", scrollTrigger: { trigger: ".cta", start: "top 70%" } });
+  gsap.from("#orbit .ph", { left: "50%", top: "50%", scale: 0, duration: 1.6, ease: "expo.out", stagger: 0.04, scrollTrigger: { trigger: ".cta", start: "top 70%" } });
+  gsap.to("#orbit", { rotate: 25, ease: "none", scrollTrigger: { trigger: ".cta", start: "top bottom", end: "bottom top", scrub: true } });
+  gsap.from(".cta .reveal:not(h2)", { y: 30, opacity: 0, duration: 1, ease: "expo.out", stagger: 0.1, scrollTrigger: { trigger: ".cta", start: "top 60%" } });
+
+  document.querySelectorAll(".magnetic").forEach((b) => {
+    b.addEventListener("pointermove", (e) => {
+      const r = b.getBoundingClientRect();
+      gsap.to(b, { x: (e.clientX - r.left - r.width / 2) * 0.3, y: (e.clientY - r.top - r.height / 2) * 0.4, duration: 0.4, ease: "power3.out" });
+    });
+    b.addEventListener("pointerleave", () => gsap.to(b, { x: 0, y: 0, duration: 0.7, ease: "elastic.out(1, 0.35)" }));
+  });
+})();
 </script>
 </body>
 </html>
