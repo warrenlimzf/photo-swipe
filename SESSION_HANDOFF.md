@@ -31,5 +31,11 @@
 - `project.pbxproj` keeps his Team ID locally, uncommitted on purpose.
 - Older items still open from before: commit email visible on the public repo; undo on a re-reviewed month clears instead of restoring.
 
+## Second session, same day (emoji albums v1.1.0 + v1.2.0)
+- Shipped from the parallel session: v1.1.0 emoji albums (plan `docs/superpowers/plans/2026-10-14-emoji-albums.md`, all 6 tasks, independent review done) and v1.2.0 (centred swipe screen with albums in a row under the photo, celebration finish with Next month, album Select: Favourite / Move to / Remove / Delete, name hint "Trips").
+- Deferred review minors, not fixed: undo after "Remove from rail" leaves the photo in the Photos album; a failed rename updates the rail first and shows a misleading permission message; an album error raised with no deck open appears later as a stale toast; per-swipe Set rebuild is O(album size); "Open Photos" uses the undocumented `photos-redirect://`.
+- Not tested: albums under Limited photo access (needs his phone).
+- A friend (Suk Ching) installed it on her own Mac and hit the bundle-ID and untrusted-certificate errors; both are now quoted and solved in the README. Her screenshot showed an older copy of the code.
+
 ## Pick up here
 Ask Warren for his next round of notes on warrenlimzf.com/photo-swipe; everything is shipped and live.
