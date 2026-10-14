@@ -6,7 +6,7 @@
 > Free, no ads, no account, no subscription. **Your photos never leave your phone.**
 
 [![Platform: iOS 18+](https://img.shields.io/badge/platform-iOS%2018%2B-0ea5e9)](#-install-step-by-step)
-[![Built with SwiftUI](https://img.shields.io/badge/built%20with-SwiftUI-f05138)](#%EF%B8%8F-how-it-was-built)
+[![Built with SwiftUI](https://img.shields.io/badge/built%20with-SwiftUI-f05138)](#-how-it-was-built)
 [![Privacy: 100% on device](https://img.shields.io/badge/privacy-100%25%20on%20device-22c55e)](#-is-it-safe)
 [![Updates: watch releases](https://img.shields.io/badge/updates-watch%20releases-f59e0b)](#-getting-updates)
 [![License: MIT](https://img.shields.io/badge/license-MIT-8b5cf6)](LICENSE)
@@ -43,7 +43,7 @@
 5. [The 7-day renewal](#-the-7-day-renewal)
 6. [Is it safe?](#-is-it-safe)
 7. [How it works](#-how-it-works)
-8. [How it was built](#%EF%B8%8F-how-it-was-built)
+8. [How it was built](#-how-it-was-built)
 9. [Troubleshooting](#-troubleshooting)
 10. [For developers and AI assistants](#-for-developers-and-ai-assistants)
 11. [Credit and licence](#-credit-and-licence)
@@ -206,7 +206,7 @@ A swipe counts the instant you let go. The old card flies off on its own while t
 
 ---
 
-## 🛠️ How it was built
+## 🧰 How it was built
 
 I'm a finance student, not a software engineer. I wrote the brief, made the design calls and tested it on my own phone. **[Claude Code](https://claude.com/claude-code) wrote the Swift.** The first design was thrown out for looking machine-made. The current look, black with the photos edge to edge, was the second attempt. The full story is in the [case study](https://www.warrenlimzf.com/photo-swipe/).
 
@@ -238,7 +238,7 @@ Still stuck? [Open an issue](https://github.com/warrenlimzf/photo-swipe/issues) 
 
 ---
 
-## 🧑‍💻 For developers and AI assistants
+## 💻 For developers and AI assistants
 
 ```
 Sources/SwipeCore/      rules only: decisions, session + undo, months, On this day, streak, save file
