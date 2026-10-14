@@ -1,0 +1,16 @@
+.DS_Store
+.build/
+.swiftpm/
+DerivedData/
+xcuserdata/
+*.xcuserstate
+build/
+*.ipa
+*.dSYM*
+fastlane/report.xml
+*.p8
+*.p12
+*.mobileprovision
+.env*
+install-local.sh
+.vercel

@@ -1,0 +1,294 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Photo Swipe · an iPhone app by Warren Lim</title>
+<meta name="description" content="An iPhone app for clearing out a camera roll by swiping. Free, no ads, and the photos never leave the phone. Case study and install guide.">
+<meta name="robots" content="noindex">
+<link rel="icon" href="img/favicon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Libre+Franklin:wght@400;500;600&family=Newsreader:opsz,wght@6..72,400;6..72,500;6..72,600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bp-sm: 40rem; --bp-md: 48rem; --bp-lg: 64rem; --bp-xl: 80rem;
+    --measure: 88rem; --gutter: 1.25rem;
+    --canvas: #0b0d0f; --card: #16191c; --ink: #f4f1ea; --muted: rgba(244, 241, 234, .62);
+    --hairline: rgba(244, 241, 234, .12); --keep: #6fcf97; --delete: #ff6b5e;
+    --display: "Newsreader", Georgia, serif;
+    --text: "Libre Franklin", system-ui, sans-serif;
+    --num: "IBM Plex Mono", ui-monospace, monospace;
+    --ease: cubic-bezier(.23, 1, .32, 1);
+  }
+  @media (min-width: 48rem) { :root { --gutter: 5rem; } }
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body { margin: 0; background: var(--canvas); color: var(--ink); font: 400 1.0625rem/1.65 var(--text); -webkit-font-smoothing: antialiased; }
+  ::selection { background: #3f6fb5; color: #fff; }
+  a { color: inherit; }
+  a[href], button { cursor: pointer; }
+  img { display: block; max-width: 100%; }
+  .layout-container { width: 100%; max-width: var(--measure); margin-inline: auto; padding-inline: var(--gutter); }
+  .layout-grid { display: grid; gap: 2rem; grid-template-columns: repeat(var(--cols, 1), minmax(0, 1fr)); }
+  @media (min-width: 40rem) { .layout-grid { grid-template-columns: repeat(var(--cols-sm, var(--cols, 1)), minmax(0, 1fr)); } }
+  @media (min-width: 64rem) { .layout-grid { grid-template-columns: repeat(var(--cols-lg, var(--cols-sm, var(--cols, 1))), minmax(0, 1fr)); } }
+  .eyebrow { font: 600 .75rem/1 var(--text); letter-spacing: .14em; text-transform: uppercase; color: var(--muted); margin: 0; }
+  h1, h2, h3 { font-family: var(--display); font-weight: 500; letter-spacing: -.01em; margin: 0; }
+  h1 { font-size: clamp(3.25rem, 9vw, 7rem); line-height: .95; }
+  h2 { font-size: clamp(2rem, 4.2vw, 3.5rem); line-height: 1.05; }
+  h3 { font-size: 1.5rem; line-height: 1.2; }
+  p { margin: 0; }
+  .lede { font-size: clamp(1.15rem, 1.6vw, 1.45rem); line-height: 1.5; color: var(--muted); max-width: 34rem; }
+  .num { font-family: var(--num); font-variant-numeric: tabular-nums; }
+  section { padding-block: clamp(4rem, 9vw, 8rem); border-top: 1px solid var(--hairline); }
+  nav { display: flex; justify-content: space-between; align-items: center; padding-block: 1.5rem; font-size: .95rem; }
+  nav a { text-decoration: none; color: var(--muted); transition: color .2s var(--ease); }
+  nav a:hover { color: var(--ink); }
+  nav .brand { display: flex; align-items: center; gap: .75rem; color: var(--ink); font-weight: 500; }
+  nav .brand img { width: 30px; height: 30px; border-radius: 8px; }
+  nav .links { display: flex; gap: 1.75rem; }
+
+  .hero { padding-block: clamp(2rem, 6vw, 5rem) clamp(4rem, 8vw, 7rem); align-items: center; }
+  .hero-copy { display: grid; gap: 1.75rem; }
+  .actions { display: flex; flex-wrap: wrap; gap: .75rem; margin-top: .5rem; }
+  .btn { display: inline-flex; align-items: center; min-height: 3.25rem; padding: 0 1.6rem; border-radius: 999px; text-decoration: none; font-weight: 600; font-size: 1rem; transition: transform .16s ease-out, background .2s var(--ease); }
+  .btn:active { transform: scale(.97); }
+  .btn-primary { background: var(--ink); color: var(--canvas); }
+  .btn-quiet { border: 1px solid var(--hairline); }
+  .btn-quiet:hover { background: var(--card); }
+  .facts { display: flex; flex-wrap: wrap; gap: 2.5rem; margin-top: 1.25rem; }
+  .facts div { display: grid; gap: .5rem; }
+  .facts b { font: 500 1.6rem/1 var(--num); }
+
+  .phone { width: min(100%, 21.5rem); margin-inline: auto; border-radius: 3rem; padding: .6rem; background: #000; box-shadow: 0 0 0 1px rgba(255, 255, 255, .14), 0 40px 80px rgba(0, 0, 0, .6); }
+  .phone-screen { position: relative; aspect-ratio: 603 / 1311; border-radius: 2.45rem; overflow: hidden; background: var(--canvas); }
+  .phone-screen img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; opacity: 0; transition: opacity .5s var(--ease); }
+  .phone-screen img.on { opacity: 1; }
+  .hero .phone { transform: rotate(2.5deg); }
+
+  .walk { align-items: start; }
+  .walk-phone { position: sticky; top: 8vh; min-width: 0; overflow: hidden; padding: 1rem 0 3rem; }
+  .steps { display: grid; }
+  .step { min-height: 78vh; display: grid; align-content: center; gap: 1rem; opacity: .32; transition: opacity .4s var(--ease); }
+  .step.on { opacity: 1; }
+  .step p { color: var(--muted); max-width: 30rem; }
+  .step .num { font-size: .85rem; color: var(--muted); }
+  .step-shot { display: none; }
+
+  .story { gap: 3rem; }
+  .story p + p { margin-top: 1.1rem; }
+  .story .body { color: var(--muted); }
+  .story .body strong { color: var(--ink); font-weight: 600; }
+  .table { border-top: 1px solid var(--hairline); }
+  .row { display: grid; grid-template-columns: minmax(0, 11rem) minmax(0, 1fr); gap: 1.5rem; padding-block: 1.1rem; border-bottom: 1px solid var(--hairline); }
+  .row dt { font-weight: 600; }
+  .row dd { margin: 0; color: var(--muted); }
+
+  .safe li { list-style: none; padding-block: 1.25rem; border-top: 1px solid var(--hairline); display: grid; gap: .35rem; }
+  .safe ul { margin: 0; padding: 0; }
+  .safe li span { color: var(--muted); }
+
+  ol.install { counter-reset: s; list-style: none; margin: 0; padding: 0; }
+  ol.install li { counter-increment: s; display: grid; grid-template-columns: 3rem minmax(0, 1fr); gap: 1rem; padding-block: 1.1rem; border-top: 1px solid var(--hairline); }
+  ol.install li::before { content: counter(s, decimal-leading-zero); font: 500 .95rem/1.8 var(--num); color: var(--muted); }
+  ol.install b { font-weight: 600; }
+  ol.install span { color: var(--muted); }
+  .note { margin-top: 2rem; padding: 1.25rem 1.5rem; border-radius: 1rem; background: var(--card); color: var(--muted); }
+  .note strong { color: var(--ink); }
+
+  footer { border-top: 1px solid var(--hairline); padding-block: 2.5rem; color: var(--muted); font-size: .95rem; display: flex; flex-wrap: wrap; gap: 1rem 2rem; justify-content: space-between; }
+
+  .reveal { opacity: 0; transform: translateY(18px); transition: opacity .7s var(--ease), transform .7s var(--ease); transition-delay: calc(var(--i, 0) * 70ms); }
+  .reveal.in { opacity: 1; transform: none; }
+
+  @media (max-width: 63.99rem) {
+    nav .links a:not(.keep) { display: none; }
+    .hero .phone { transform: none; margin-top: 1rem; }
+    .walk-phone { display: none; }
+    .step { min-height: 0; opacity: 1; padding-block: 2rem; border-top: 1px solid var(--hairline); }
+    .step-shot { display: block; width: min(100%, 17rem); border-radius: 1.75rem; margin-top: 1rem; box-shadow: 0 0 0 1px rgba(255, 255, 255, .14); }
+    .row { grid-template-columns: minmax(0, 1fr); gap: .25rem; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    html { scroll-behavior: auto; }
+    .reveal { opacity: 1; transform: none; transition: none; }
+    .step { opacity: 1; transition: none; }
+    .phone-screen img { transition: none; }
+    .hero .phone { transform: none; }
+  }
+</style>
+</head>
+<body>
+
+<header class="layout-container">
+  <nav>
+    <a class="brand" href="https://www.warrenlimzf.com/"><img src="img/icon.png" alt="">Photo Swipe</a>
+    <div class="links">
+      <a href="#how">How it works</a>
+      <a href="#built">How it was built</a>
+      <a href="#safe">Is it safe</a>
+      <a href="#install">Install</a>
+      <a class="keep" href="https://github.com/warrenlimzf/photo-swipe">GitHub</a>
+    </div>
+  </nav>
+
+  <div class="hero layout-grid" style="--cols:1; --cols-lg:2">
+    <div class="hero-copy">
+      <p class="eyebrow reveal">iPhone app · October 2026</p>
+      <h1 class="reveal" style="--i:1">Photo Swipe</h1>
+      <p class="lede reveal" style="--i:2">Clear out a camera roll by swiping. Right keeps a photo, left bins it, and nothing goes until you've looked over the pile.</p>
+      <div class="actions reveal" style="--i:3">
+        <a class="btn btn-primary" href="https://github.com/warrenlimzf/photo-swipe">Get the code on GitHub</a>
+        <a class="btn btn-quiet" href="#install">How to install</a>
+      </div>
+      <div class="facts reveal" style="--i:4">
+        <div><b>0</b><p class="eyebrow">Ads or sign-ups</p></div>
+        <div><b>0</b><p class="eyebrow">Photos leave the phone</p></div>
+        <div><b>11</b><p class="eyebrow">Automated tests</p></div>
+      </div>
+    </div>
+    <div class="reveal" style="--i:2; min-width:0">
+      <div class="phone"><div class="phone-screen"><img class="on" src="img/library.jpg" alt="The library screen: three figures, an On this day strip and the first month"></div></div>
+    </div>
+  </div>
+</header>
+
+<section id="how">
+  <div class="layout-container">
+    <p class="eyebrow">How it works</p>
+    <div class="walk layout-grid" style="--cols:1; --cols-lg:2; margin-top:1rem">
+      <div class="steps">
+        <article class="step on" data-shot="0">
+          <span class="num">01</span>
+          <h2>Your library, a month at a time</h2>
+          <p>Every month shows as a block of its own photos with a thin line of progress under it. Pick one and start. Finished months turn grey and get a tick.</p>
+          <img class="step-shot" src="img/months.jpg" alt="Months shown as mosaics of photos" loading="lazy">
+        </article>
+        <article class="step" data-shot="1">
+          <span class="num">02</span>
+          <h2>Swipe right to keep, left to bin</h2>
+          <p>One photo at a time, at its own shape. A quick flick is enough. Undo steps back as far as you like, and a bookmark parks the ones you can't decide on.</p>
+          <img class="step-shot" src="img/swipe.jpg" alt="A photo card with keep and delete buttons" loading="lazy">
+        </article>
+        <article class="step" data-shot="2">
+          <span class="num">03</span>
+          <h2>Look it over before anything goes</h2>
+          <p>Swiping only marks a photo. The marked ones wait in a grid where a tap rescues any of them. Deleting takes your tap, then Apple's own confirmation.</p>
+          <img class="step-shot" src="img/review.jpg" alt="The review grid with a delete button" loading="lazy">
+        </article>
+        <article class="step" data-shot="3">
+          <span class="num">04</span>
+          <h2>Then see what you got back</h2>
+          <p>The library keeps count of the space freed, how much you've reviewed, and how many days in a row you've kept at it.</p>
+          <img class="step-shot" src="img/library.jpg" alt="The library screen with the running totals" loading="lazy">
+        </article>
+      </div>
+      <div class="walk-phone">
+        <div class="phone"><div class="phone-screen" id="walk-screen">
+          <img class="on" src="img/months.jpg" alt="">
+          <img src="img/swipe.jpg" alt="">
+          <img src="img/review.jpg" alt="">
+          <img src="img/library.jpg" alt="">
+        </div></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="built">
+  <div class="layout-container">
+    <div class="story layout-grid" style="--cols:1; --cols-lg:2">
+      <div>
+        <p class="eyebrow">How it was built</p>
+        <h2 style="margin-top:1rem">I set the brief. Claude Code wrote the Swift.</h2>
+      </div>
+      <div class="body">
+        <p>I study finance. I'm not a software engineer and I can't write Swift. What I can do is describe what I want, judge what comes back, and say no.</p>
+        <p>The idea came from a swipe-to-clean app I'd tried and liked, until the weekly subscription. I wanted the same loop on my own phone with no paywall, so I asked <strong>Claude Code</strong> to build one from scratch in a single sitting on 14 October 2026.</p>
+        <p>The code was the quick part. The first design came back as a navy card with stat tiles on cream, and I threw it out: it looked machine-made. The second attempt started from a different question, which was what a photo app should look like when the photos are the point. That gave the version here: <strong>black, photos edge to edge, almost no interface</strong>.</p>
+        <p>The other thing I pushed on was feel. The first build made you wait a quarter of a second between swipes. Now a swipe counts the instant you let go, and the old card flies off on its own while the next one is already live.</p>
+      </div>
+    </div>
+    <dl class="table" style="margin-top:4rem">
+      <div class="row"><dt>Swift and SwiftUI</dt><dd>Apple's language and its toolkit for screens, gestures and animation.</dd></div>
+      <div class="row"><dt>PhotoKit</dt><dd>Apple's framework for reading the photo library and asking to delete from it. One file in the app talks to it.</dd></div>
+      <div class="row"><dt>Xcode</dt><dd>Apple's free tool that turns the code into an app and puts it on a phone.</dd></div>
+      <div class="row"><dt>No outside code</dt><dd>Nothing third-party is bundled, so there is nothing in it I haven't seen described.</dd></div>
+      <div class="row"><dt>Tests</dt><dd><span class="num">11</span> automated checks on the rules: swipes, undo, month grouping, On this day and the streak.</dd></div>
+    </dl>
+  </div>
+</section>
+
+<section id="safe" class="safe">
+  <div class="layout-container">
+    <div class="layout-grid" style="--cols:1; --cols-lg:2; gap:3rem">
+      <div>
+        <p class="eyebrow">Is it safe</p>
+        <h2 style="margin-top:1rem">It can't send your photos anywhere, because it never goes online.</h2>
+      </div>
+      <ul>
+        <li><b>No internet access.</b><span>There is no networking code in the app. The source is public, so anyone can check.</span></li>
+        <li><b>It can't delete on its own.</b><span>Deleting needs your tap in the review grid and then iOS's own prompt, which an app cannot skip.</span></li>
+        <li><b>Deleted photos can come back.</b><span>They sit in Recently Deleted in the Photos app for <span class="num">30</span> days.</span></li>
+        <li><b>No account, ads or tracking.</b><span>All it stores is one small file of your decisions, on the phone.</span></li>
+        <li><b>One honest limit.</b><span>It has been used on my phone, not tested across many. Go gently the first time.</span></li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<section id="install">
+  <div class="layout-container">
+    <div class="layout-grid" style="--cols:1; --cols-lg:2; gap:3rem">
+      <div>
+        <p class="eyebrow">Install</p>
+        <h2 style="margin-top:1rem">It isn't on the App Store, so you build it yourself.</h2>
+        <p class="lede" style="margin-top:1.5rem">That is free, but it needs a Mac. Publishing to the App Store costs US$99 a year, which I haven't paid. The full walk-through, with every click, is in the README on GitHub.</p>
+        <div class="actions" style="margin-top:2rem"><a class="btn btn-primary" href="https://github.com/warrenlimzf/photo-swipe#install-step-by-step">Open the full guide</a></div>
+      </div>
+      <div>
+        <ol class="install">
+          <li><div><b>Install Xcode</b> <span>from the Mac App Store. It's Apple's, and free.</span></div></li>
+          <li><div><b>Download the code</b> <span>from GitHub and open <span class="num">PhotoSwipe.xcodeproj</span>.</span></div></li>
+          <li><div><b>Sign in with your Apple ID</b> <span>in Xcode and pick your name as the team.</span></div></li>
+          <li><div><b>Plug in your iPhone,</b> <span>trust the Mac, and turn on Developer Mode.</span></div></li>
+          <li><div><b>Press Run.</b> <span>Then trust yourself on the phone under VPN &amp; Device Management.</span></div></li>
+        </ol>
+        <p class="note"><strong>Good to know:</strong> an app installed this way stops opening after <span class="num">7</span> days. Plug in and press Run again to renew it. Your progress is kept.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="layout-container">
+  <footer>
+    <span>Built by <a href="https://www.warrenlimzf.com/">Warren Lim</a> with Claude Code. MIT licence.</span>
+    <a href="https://github.com/warrenlimzf/photo-swipe">github.com/warrenlimzf/photo-swipe</a>
+  </footer>
+</div>
+
+<script>
+  const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const reveals = document.querySelectorAll('.reveal');
+  if (reduce || !('IntersectionObserver' in window)) {
+    reveals.forEach(el => el.classList.add('in'));
+  } else {
+    const io = new IntersectionObserver(entries => entries.forEach(e => {
+      if (e.isIntersecting) { e.target.classList.add('in'); io.unobserve(e.target); }
+    }), { threshold: 0.15 });
+    reveals.forEach(el => io.observe(el));
+
+    // The phone stays put while the steps scroll past; the screen follows the step in view.
+    const shots = document.querySelectorAll('#walk-screen img');
+    const steps = document.querySelectorAll('.step');
+    const walk = new IntersectionObserver(entries => entries.forEach(e => {
+      if (!e.isIntersecting) return;
+      steps.forEach(s => s.classList.toggle('on', s === e.target));
+      shots.forEach((img, i) => img.classList.toggle('on', i === Number(e.target.dataset.shot)));
+    }), { rootMargin: '-45% 0px -45% 0px' });
+    steps.forEach(s => walk.observe(s));
+  }
+</script>
+</body>
+</html>
