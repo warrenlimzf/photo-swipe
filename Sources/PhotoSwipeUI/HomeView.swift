@@ -3,6 +3,7 @@ import SwipeCore
 
 private enum Route: Hashable {
     case bookmarks, stats, settings
+    case album(String)
 }
 
 /// The library: every month as a mosaic of its own photos.
@@ -12,6 +13,7 @@ struct HomeView: View {
     @State private var deck: Deck?
     @State private var route: Route?
     @State private var showTrash = false
+    @State private var editor: EditorTarget?
     @Namespace private var zoom
 
     var body: some View {
@@ -28,6 +30,9 @@ struct HomeView: View {
                             .padding(.top, 24)
                             .transition(.opacity)
                     }
+                    AlbumsSection(onOpen: { route = .album($0.id) }, onNew: { editor = .new })
+                        .padding(.top, 28)
+                        .rise(ready, order: 1)
                     if !model.onThisDay.isEmpty {
                         onThisDay
                             .padding(.top, 36)
@@ -77,6 +82,7 @@ struct HomeView: View {
                 case .bookmarks: BookmarksView()
                 case .stats: StatsView()
                 case .settings: SettingsView()
+                case .album(let id): AlbumView(shelfID: id)
                 }
             }
             .refreshable { await model.reload() }
@@ -86,6 +92,7 @@ struct HomeView: View {
                 .zoomTransition(deck.title, in: zoom)
         }
         .sheet(isPresented: $showTrash) { ReviewDeleteView() }
+        .sheet(item: $editor) { target in AlbumEditor(editing: target.album) }
     }
 
     private func open(_ title: String, _ ids: [String]) {
