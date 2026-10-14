@@ -36,6 +36,18 @@ The swipe-to-clean apps on the App Store are mostly paid by subscription. This o
 4. **To delete** — grid of everything marked. Tap rescues a photo. One button deletes, iOS shows its own confirmation, and the photos go to Recently Deleted for 30 days.
 5. **Bookmarks, Stats, Settings.**
 
+## Emoji albums (v1.1.0)
+
+- A rail of emoji buttons down the right of the swipe screen, ＋ at the bottom. It starts empty.
+- ＋ asks for one emoji and a short name and makes a real album in Apple Photos titled "⛳ Golf".
+- Tap an emoji to select it (green ring, name bubble for about a second). It stays on between photos and resets when the deck closes.
+- Swipe right keeps the photo and adds it to every selected album. The Keep stamp shows the emojis. Deletes ignore the selection.
+- Undo takes the photo out of only the albums that swipe added it to.
+- Long-press an emoji: Edit (renames the Photos album) or Remove from rail (the Photos album stays).
+- Home shows an Albums list; each album page can be swiped again, and a long-press removes a photo from the album.
+- If the user deletes the album in Photos, the next right-swipe quietly recreates it.
+- Shared iCloud albums are not possible (no API), and apps can open Photos but not a given album.
+
 ## Rules
 
 - A swipe records intent only. Deleting needs the review grid plus the iOS prompt.

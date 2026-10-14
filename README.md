@@ -59,6 +59,7 @@
 - 🕰️ **On this day.** Photos from today's date in earlier years.
 - 🧺 **A review pile.** Marked photos wait in a grid. Tap one to rescue it.
 - 🔖 **Bookmarks** for photos you can't decide on yet.
+- 📁 **Emoji albums.** Tap ＋ on the right of the swipe screen to make one, like ⛳ Golf. Tap the emoji, swipe right, and the photo lands in that album in Apple Photos. Undo takes it back out. (Shared iCloud albums aren't possible: Apple gives apps no access to them.)
 - 📊 **Stats:** space freed, photos kept and deleted, and a daily streak.
 
 **❌ This is NOT:**
