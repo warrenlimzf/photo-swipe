@@ -99,11 +99,15 @@ At the top of this page click **Watch → Custom → tick Releases → Apply**. 
 Open the **App Store on your Mac**, search for **Xcode**, and install it. It is made by Apple and it is free. It's a large download. Open it once, accept the licence, and when it offers platforms, keep **iOS** ticked.
 
 ### 3️⃣ Download this code (repeat on every update)
-Click the green **Code** button on this page, then **Download ZIP**, and unzip it. Or paste this into **Terminal**. It's safe to run again on every update: the first time it downloads the code into your home folder (`~/photo-swipe`, i.e. `/Users/<you>/photo-swipe`), every time after that it replaces it with the latest version, then opens the project in Xcode.
+Click the green **Code** button on this page, then **Download ZIP**, and unzip it. Or paste this into **Terminal**. It's safe to run again on every update: the first time it downloads the code, every time after that it replaces it with the latest version, then it opens the project in Xcode.
 
 ```bash
 cd ~ && (git clone https://github.com/warrenlimzf/photo-swipe.git 2>/dev/null || (cd photo-swipe && git fetch && git reset --hard @{u})) && open ~/photo-swipe/PhotoSwipe.xcodeproj
 ```
+
+📁 **Where it's saved:** a folder called **`photo-swipe`** in your home folder, at **`/Users/<your Mac username>/photo-swipe`** (Terminal writes this as `~/photo-swipe`). Your username is the word before the `@` in Terminal, so `sukki@Suks-MacBook-Air` means `/Users/sukki/photo-swipe`. To see it in Finder, press **Shift-Cmd-H** (opens your home folder) and open **photo-swipe**. The Xcode project inside is **`PhotoSwipe.xcodeproj`**.
+
+> 💡 Saw `fatal: destination path 'photo-swipe' already exists`? That came from plain `git clone`, and it means you already have the code at that spot. Use the command above instead, which updates the existing folder.
 
 > ⚠️ **After pasting this, change two things in Xcode before you press Run, every single time** (first install and every update):
 >
