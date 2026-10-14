@@ -99,11 +99,13 @@ At the top of this page click **Watch → Custom → tick Releases → Apply**. 
 Open the **App Store on your Mac**, search for **Xcode**, and install it. It is made by Apple and it is free. It's a large download. Open it once, accept the licence, and when it offers platforms, keep **iOS** ticked.
 
 ### 3️⃣ Download this code (repeat on every update)
-Click the green **Code** button on this page, then **Download ZIP**, and unzip it. Or, if you use git:
+Click the green **Code** button on this page, then **Download ZIP**, and unzip it. Or paste this into **Terminal**. It's safe to run again on every update: the first time it downloads the code into your home folder (`~/photo-swipe`, i.e. `/Users/<you>/photo-swipe`), every time after that it replaces it with the latest version, then opens the project in Xcode.
 
 ```bash
-git clone https://github.com/warrenlimzf/photo-swipe.git
+cd ~ && (git clone https://github.com/warrenlimzf/photo-swipe.git 2>/dev/null || (cd photo-swipe && git fetch && git reset --hard @{u})) && open ~/photo-swipe/PhotoSwipe.xcodeproj
 ```
+
+> 💡 Replacing the code also resets the Bundle Identifier, so redo step 6 after each update. Your progress in the app lives on your phone and is kept.
 
 ### 4️⃣ Open the project
 In the folder, double-click **`PhotoSwipe.xcodeproj`**. Xcode opens.
@@ -164,7 +166,7 @@ Prefer not to make an account? Bookmark the [Releases page](https://github.com/w
 | You got the code by | Do this |
 |---|---|
 | **Download ZIP** | Download the new ZIP, open its `PhotoSwipe.xcodeproj`, choose your team again, press **Run**. |
-| **`git clone`** | Run `git pull` in the folder, then press **Run** in Xcode. |
+| **Terminal** | Paste the same command from step 3 again, redo step 6, press **Run**. |
 
 No cable needed once you've set up [installing over Wi-Fi](#-skip-the-cable-install-over-wi-fi).
 
