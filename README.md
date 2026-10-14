@@ -111,10 +111,13 @@ In the folder, double-click **`PhotoSwipe.xcodeproj`**. Xcode opens.
 ### 5️⃣ Sign in with your Apple ID
 Menu bar: **Xcode → Settings → Apple Accounts**, click **+**, and sign in. You are typing into Apple's own software. This project never sees your password.
 
-### 6️⃣ Choose your team
-In the left sidebar click the blue **PhotoSwipe** icon at the top. In the middle, under TARGETS, click **PhotoSwipe**, open **Signing & Capabilities**, and pick your name in the **Team** menu (it says "Personal Team").
+### 6️⃣ Choose your team, and give the app your own ID (required)
+In the left sidebar click the blue **PhotoSwipe** icon at the top. In the middle, under TARGETS, click **PhotoSwipe**, then open **Signing & Capabilities**.
 
-> 💡 If Xcode says the bundle identifier is not available, change **Bundle Identifier** on that same screen to something of your own, like `com.yourname.photoswipe`.
+1. In the **Team** menu, pick your name (it says "Personal Team").
+2. In **Bundle Identifier**, replace `com.warrenlimzf.photoswipe` with your own, for example `com.yourname.photoswipe`. Lowercase letters, numbers and dots only, no spaces.
+
+> ⚠️ **Don't skip the second part.** Every app ID can only belong to one Apple account, and `com.warrenlimzf.photoswipe` is already mine. If you keep it, Xcode shows two red errors: **"Failed Registering Bundle Identifier … is not available"** and **"No profiles for 'com.warrenlimzf.photoswipe' were found"**. Change the ID, and both disappear (click **Try Again** if they don't clear by themselves).
 
 ### 7️⃣ Connect your iPhone
 Plug it in, unlock it, and tap **Trust** when it asks.
@@ -127,8 +130,15 @@ At the top of the Xcode window, pick your iPhone from the device menu, then pres
 
 > 🔑 The first time, your Mac asks for your **Mac login password** (not your Apple ID password) so Xcode can use your signing key. Type it and choose **Always Allow**.
 
-### 🔟 Trust yourself, then allow photos
-The first launch is blocked. On the iPhone go to **Settings → General → VPN & Device Management**, tap your Apple ID, then **Trust**. Open Photo Swipe again, and when it asks about photos choose **Allow Full Access**.
+### 🔟 Trust yourself on the iPhone, then allow photos
+The first time, the app installs but won't open. Xcode shows **"The application could not be launched because the Developer App Certificate is not trusted"** and the phone says **"Untrusted Developer"**. That's expected: your iPhone just hasn't been told to trust apps you built yourself.
+
+1. Click **OK** on the Xcode message.
+2. On the iPhone: **Settings → General → VPN & Device Management**.
+3. Under **Developer App**, tap your Apple ID email, then **Trust "…"**, then **Trust** again.
+4. Open Photo Swipe from the home screen (or press **Run** again). When it asks about photos, choose **Allow Full Access**.
+
+> ✅ You only do this once per Apple ID. Weekly renewals and updates open straight away.
 
 > 🖼️ With limited access the app only sees the handful of photos you hand-pick, which defeats the point.
 
@@ -238,10 +248,12 @@ I'm a finance student, not a software engineer. I wrote the brief, made the desi
 
 | What you see | What to do |
 |---|---|
-| **"Untrusted Developer"** when opening the app | iPhone: **Settings → General → VPN & Device Management**, tap your Apple ID, **Trust**. |
+| **"Untrusted Developer"** when opening the app | iPhone: **Settings → General → VPN & Device Management**, tap your Apple ID, **Trust**. [Step 10](#-trust-yourself-on-the-iphone-then-allow-photos) |
 | **The app won't open after about a week** | The 7-day limit. Plug in and press **Run** again. [Details](#-the-7-day-renewal) |
 | **"Signing requires a development team"** | You skipped step 6. Pick your name under **Team**. |
-| **"Bundle identifier is not available"** | Change **Bundle Identifier** to something of your own, like `com.yourname.photoswipe`. |
+| **"Failed Registering Bundle Identifier"** or **"No profiles for 'com.warrenlimzf.photoswipe' were found"** | That ID is taken. Change **Bundle Identifier** to your own, like `com.yourname.photoswipe`, then **Try Again**. [Step 6](#6%EF%B8%8F⃣-choose-your-team-and-give-the-app-your-own-id-required) |
+| **"Developer App Certificate is not trusted"** on your Mac | Click OK, then trust yourself on the iPhone. [Step 10](#-trust-yourself-on-the-iphone-then-allow-photos) |
+| **The app's photo message mentions only "keep and delete"** | You have an old copy. Download the latest ZIP or `git pull`, then **Run**. Your progress is kept. |
 | **A box asks for a password to allow `codesign`** | It wants your **Mac login password**. Type it and click **Always Allow**. |
 | **Developer Mode is not in Settings** | It appears after the phone has been connected to Xcode once. Plug in, open Xcode, then look again. |
 | **The app only shows a few photos** | Photo access is limited. iPhone: **Settings → Apps → Photo Swipe → Photos → Full Access**. |
