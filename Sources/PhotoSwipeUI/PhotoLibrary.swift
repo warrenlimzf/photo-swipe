@@ -19,6 +19,8 @@ final class PhotoLibrary {
     private(set) var access: Access = .unknown
     private(set) var assets: [AssetRef] = []
     private(set) var isLoading = false
+    /// Photos marked as favourites in Photos.
+    private(set) var favorites: Set<String> = []
     private var byID: [String: PHAsset] = [:]
     private let images = PHCachingImageManager()
     private let cache = NSCache<NSString, PlatformImage>()
@@ -50,15 +52,17 @@ final class PhotoLibrary {
         let loaded = await Task.detached(priority: .userInitiated) { Self.fetchAll() }.value
         byID = loaded.byID
         assets = loaded.refs
+        favorites = loaded.favorites
         isLoading = false
     }
 
-    private nonisolated static func fetchAll() -> (refs: [AssetRef], byID: [String: PHAsset]) {
+    private nonisolated static func fetchAll() -> (refs: [AssetRef], byID: [String: PHAsset], favorites: Set<String>) {
         let options = PHFetchOptions()
         options.sortDescriptors = [NSSortDescriptor(key: "creationDate", ascending: false)]
         let result = PHAsset.fetchAssets(with: options)
         var refs: [AssetRef] = []
         var byID: [String: PHAsset] = [:]
+        var favorites: Set<String> = []
         refs.reserveCapacity(result.count)
         result.enumerateObjects { asset, _, _ in
             guard asset.mediaType == .image || asset.mediaType == .video else { return }
@@ -71,8 +75,9 @@ final class PhotoLibrary {
                 pixelHeight: asset.pixelHeight
             ))
             byID[asset.localIdentifier] = asset
+            if asset.isFavorite { favorites.insert(asset.localIdentifier) }
         }
-        return (refs, byID)
+        return (refs, byID, favorites)
     }
 
     func ref(_ id: String) -> AssetRef? {
@@ -146,6 +151,16 @@ final class PhotoLibrary {
         guard !picked.isEmpty else { return }
         try await PHPhotoLibrary.shared().performChanges {
             PHAssetChangeRequest.deleteAssets(picked as NSArray)
+        }
+    }
+
+    /// Marks or unmarks photos as favourites in Photos. The set updates at once.
+    func setFavorite(_ ids: [String], to on: Bool) async throws {
+        let picked = ids.compactMap { byID[$0] }
+        if on { favorites.formUnion(ids) } else { favorites.subtract(ids) }
+        guard !picked.isEmpty else { return }
+        try await PHPhotoLibrary.shared().performChanges {
+            for asset in picked { PHAssetChangeRequest(for: asset).isFavorite = on }
         }
     }
 

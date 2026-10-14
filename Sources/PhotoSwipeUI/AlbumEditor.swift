@@ -41,7 +41,7 @@ struct AlbumEditor: View {
                     .background(Theme.card, in: Circle())
                     .overlay { Circle().strokeBorder(Theme.hairline) }
                 Text(emoji == nil ? "Tap the circle, pick an emoji" : "Emoji").eyebrow()
-                TextField("Name, e.g. Golf", text: $nameText)
+                TextField("Name, e.g. Trips", text: $nameText)
                     .font(.title3.weight(.semibold))
                     .multilineTextAlignment(.center)
                     .foregroundStyle(Theme.ink)

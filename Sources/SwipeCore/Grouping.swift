@@ -39,6 +39,12 @@ public enum Grouping {
         }
     }
 
+    /// The next older month that still has undecided photos, for "Next month" on the finish screen.
+    public static func nextMonth(after key: MonthKey, in months: [MonthGroup], state: ReviewState) -> MonthGroup? {
+        guard let i = months.firstIndex(where: { $0.key == key }) else { return nil }
+        return months[(i + 1)...].first { group in group.ids.contains { state.decisions[$0] == nil } }
+    }
+
     /// Photos taken on today's month and day in an earlier year, newest first.
     public static func onThisDay(_ items: [DatedID], today: Date, calendar: Calendar) -> [String] {
         let now = calendar.dateComponents([.year, .month, .day], from: today)

@@ -32,12 +32,16 @@ struct SwipeDeckView: View {
     @State private var selectedAlbums: Set<String> = []
     @State private var ledger = FilingLedger()
     @State private var editor: EditorTarget?
+    @State private var title: String
+    @State private var month: MonthKey?
 
     private let threshold: CGFloat = 100
 
     init(deck: Deck, state: ReviewState) {
         self.deck = deck
         _session = State(initialValue: ReviewSession(ids: deck.ids, state: state, onlyUndecided: !deck.everyPhoto))
+        _title = State(initialValue: deck.title)
+        _month = State(initialValue: deck.month)
     }
 
     var body: some View {
@@ -45,10 +49,9 @@ struct SwipeDeckView: View {
             topBar
             ProgressLine(value: Double(session.index) / Double(max(session.ids.count, 1)), height: 2)
                 .padding(.horizontal, 4)
-            HStack(alignment: .top, spacing: 8) {
             ZStack {
                 if session.isFinished {
-                    finished.transition(.scale(scale: 0.96).combined(with: .opacity))
+                    finished.transition(.opacity)
                 }
                 // Keyed by photo, so the card underneath becomes the top card without being rebuilt.
                 ForEach([session.next, session.current].compactMap { $0 }, id: \.self) { id in
@@ -70,13 +73,15 @@ struct SwipeDeckView: View {
                 }
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
+            if !session.isFinished {
+                // The albums sit in one centred row under the photo, so the photo keeps equal margins.
                 AlbumRail(selected: $selectedAlbums, onAdd: { editor = .new }, onEdit: { editor = .edit($0) })
-                    .opacity(session.isFinished ? 0 : 1)
-                    .allowsHitTesting(!session.isFinished)
+                    .transition(.opacity)
+                caption
+                controls
             }
-            caption
-            controls
         }
+        .animation(.easeOut(duration: 0.25), value: session.isFinished)
         .padding(.horizontal, 16)
         .padding(.bottom, 8)
         .background { Ambient(id: session.current).equatable() }
@@ -134,7 +139,7 @@ struct SwipeDeckView: View {
             .accessibilityLabel("Close")
             Spacer()
             VStack(spacing: 4) {
-                Text(deck.title)
+                Text(title)
                     .font(.caption.weight(.semibold))
                     .tracking(1.4)
                     .textCase(.uppercase)
@@ -167,24 +172,35 @@ struct SwipeDeckView: View {
         .foregroundStyle(Theme.ink)
     }
 
-    /// When the photo was taken, under the photo rather than on it.
+    /// Bookmark on the left, when the photo was taken in the middle, details on the right.
     private var caption: some View {
-        VStack(spacing: 3) {
-            if let id = session.current, let ref = model.library.ref(id) {
-                Text(ref.date.formatted(date: .abbreviated, time: .shortened))
-                    .font(.subheadline.weight(.medium))
-                    .foregroundStyle(Theme.ink)
-                    .contentTransition(.numericText())
-                if showInfo {
-                    Text(details(ref, size: sizes[id]))
-                        .font(.footnote)
-                        .foregroundStyle(Theme.muted)
-                        .transition(.opacity)
+        HStack(spacing: 12) {
+            SmallButton(icon: isBookmarked ? "bookmark.fill" : "bookmark", tint: isBookmarked ? Theme.keep : Theme.ink) {
+                toggleBookmark()
+            }
+            .accessibilityLabel(isBookmarked ? "Remove bookmark" : "Bookmark")
+            VStack(spacing: 3) {
+                if let id = session.current, let ref = model.library.ref(id) {
+                    Text(ref.date.formatted(date: .abbreviated, time: .shortened))
+                        .font(.subheadline.weight(.medium))
+                        .foregroundStyle(Theme.ink)
+                        .contentTransition(.numericText())
+                    if showInfo {
+                        Text(details(ref, size: sizes[id]))
+                            .font(.footnote)
+                            .foregroundStyle(Theme.muted)
+                            .transition(.opacity)
+                    }
                 }
             }
+            .monospacedDigit()
+            .frame(maxWidth: .infinity)
+            SmallButton(icon: showInfo ? "info.circle.fill" : "info.circle", tint: Theme.ink) {
+                withAnimation(.easeOut(duration: 0.2)) { showInfo.toggle() }
+            }
+            .accessibilityLabel("Photo details")
         }
-        .monospacedDigit()
-        .frame(height: 44)
+        .frame(height: 48)
         .animation(.easeOut(duration: 0.2), value: session.index)
     }
 
@@ -195,61 +211,47 @@ struct SwipeDeckView: View {
         return parts.joined(separator: " · ")
     }
 
+    /// Three buttons, mirrored around undo: delete on the left, keep on the right.
     private var controls: some View {
-        HStack(spacing: 16) {
-            RoundButton(icon: "xmark", ring: Theme.delete, large: true) { decide(.delete) }
-                .disabled(session.isFinished)
+        HStack(spacing: 34) {
+            RoundButton(icon: "xmark", fill: Theme.delete, large: true) { decide(.delete) }
                 .accessibilityLabel("Delete")
             RoundButton(icon: "arrow.uturn.backward") { undo() }
                 .disabled(!canUndo)
                 .accessibilityLabel("Undo")
-            RoundButton(icon: showInfo ? "info.circle.fill" : "info.circle") {
-                withAnimation(.easeOut(duration: 0.2)) { showInfo.toggle() }
-            }
-            .disabled(session.isFinished)
-            .accessibilityLabel("Photo details")
-            RoundButton(icon: isBookmarked ? "bookmark.fill" : "bookmark") { toggleBookmark() }
-                .disabled(session.isFinished)
-                .accessibilityLabel(isBookmarked ? "Remove bookmark" : "Bookmark")
-            RoundButton(icon: "checkmark", ring: Theme.keep, large: true) { decide(.keep) }
-                .disabled(session.isFinished)
+            RoundButton(icon: "checkmark", fill: Theme.keep, large: true) { decide(.keep) }
                 .accessibilityLabel("Keep")
         }
+        .padding(.bottom, 4)
     }
 
     private var finished: some View {
         let kept = session.ids.filter { model.state.decisions[$0] == .keep }.count
         let marked = session.ids.filter { model.state.decisions[$0] == .delete }.count
-        return VStack(spacing: 14) {
-            Image(systemName: "checkmark")
-                .font(.system(size: 30, weight: .semibold))
-                .foregroundStyle(Theme.canvas)
-                .frame(width: 72, height: 72)
-                .background(Theme.keep, in: Circle())
-                .symbolEffect(.bounce, value: session.isFinished)
-                .padding(.bottom, 6)
-            Text("All sorted")
-                .font(.largeTitle.bold())
-            Text(marked == 0 ? "\(kept) kept" : "\(kept) kept, \(marked) to delete")
-                .font(.body)
-                .monospacedDigit()
-                .foregroundStyle(Theme.muted)
-            VStack(spacing: 8) {
-                if model.state.pendingDeletes.isEmpty {
-                    PrimaryButton(title: "Back to library") { dismiss() }
-                } else {
-                    PrimaryButton(title: "Review \(model.state.pendingDeletes.count) to delete", color: Theme.delete) {
-                        showTrash = true
-                    }
-                    Button("Later") { dismiss() }
-                        .font(.body.weight(.medium))
-                        .frame(minHeight: 44)
-                }
-            }
-            .padding(.top, 14)
+        let counts = ledger.filedCounts
+        let filed = model.state.shelf.compactMap { album in counts[album.id].map { (album.emoji, $0) } }
+        let next = month.flatMap { Grouping.nextMonth(after: $0, in: model.months, state: model.state) }
+        return FinishView(
+            heading: month.map { "\(model.calendar.monthSymbols[max(0, min(11, $0.month - 1))]), done" } ?? "All sorted",
+            kept: kept, marked: marked, filed: filed,
+            pending: model.state.pendingDeletes.count,
+            nextTitle: next.map { model.monthName($0.key) },
+            onNext: { if let next { startNext(next) } },
+            onReview: { showTrash = true },
+            onDone: { dismiss() }
+        )
+    }
+
+    /// Moves straight on to the next month without leaving the swipe screen.
+    private func startNext(_ group: MonthGroup) {
+        Haptics.tick(model.hapticsEnabled)
+        withAnimation(.easeOut(duration: 0.3)) {
+            session = ReviewSession(ids: group.ids, state: model.state)
+            title = model.monthName(group.key)
+            month = group.key
+            ledger = FilingLedger()
+            leaving = []
         }
-        .foregroundStyle(Theme.ink)
-        .padding(28)
     }
 
     /// A photo that has since been deleted for real cannot be brought back by undo.
@@ -392,7 +394,8 @@ private struct FlyingCard: View {
 
 private struct RoundButton: View {
     let icon: String
-    var ring: Color?
+    /// Filled buttons carry the verdict colour; the rest are quiet glass.
+    var fill: Color?
     var large = false
     let action: () -> Void
     @Environment(\.isEnabled) private var isEnabled
@@ -400,18 +403,38 @@ private struct RoundButton: View {
     var body: some View {
         Button(action: action) {
             Image(systemName: icon)
-                .font(large ? .title2.weight(.semibold) : .body.weight(.medium))
-                .contentTransition(.symbolEffect(.replace))
-                .foregroundStyle(ring ?? Theme.ink)
-                .frame(width: large ? 68 : 48, height: large ? 68 : 48)
-                .background(.ultraThinMaterial, in: Circle())
-                .overlay {
-                    if let ring { Circle().strokeBorder(ring.opacity(0.55), lineWidth: 1.5) }
+                .font(large ? .title2.weight(.bold) : .body.weight(.semibold))
+                .foregroundStyle(fill == nil ? Theme.ink : Theme.canvas)
+                .frame(width: large ? 70 : 50, height: large ? 70 : 50)
+                .background {
+                    if let fill {
+                        Circle().fill(fill).shadow(color: fill.opacity(0.45), radius: 14, y: 6)
+                    } else {
+                        Circle().fill(.ultraThinMaterial)
+                    }
                 }
         }
         .buttonStyle(PressStyle())
         .opacity(isEnabled ? 1 : 0.3)
         .animation(.easeOut(duration: 0.2), value: isEnabled)
+    }
+}
+
+private struct SmallButton: View {
+    let icon: String
+    let tint: Color
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            Image(systemName: icon)
+                .font(.body.weight(.medium))
+                .contentTransition(.symbolEffect(.replace))
+                .foregroundStyle(tint)
+                .frame(width: 44, height: 44)
+                .background(.ultraThinMaterial, in: Circle())
+        }
+        .buttonStyle(PressStyle())
     }
 }
 

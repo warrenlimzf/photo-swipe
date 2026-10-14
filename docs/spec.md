@@ -48,6 +48,13 @@ The swipe-to-clean apps on the App Store are mostly paid by subscription. This o
 - If the user deletes the album in Photos, the next right-swipe quietly recreates it.
 - Shared iCloud albums are not possible (no API), and apps can open Photos but not a given album.
 
+## v1.2.0 changes
+
+- Swipe screen layout: the photo is centred; albums sit in one centred row under it (scrolls sideways when long); bookmark and info flank the date; three big filled buttons (delete, undo, keep).
+- Finish screen: a drawn tick, a green glow and the deck's album emojis bursting out; a summary of kept, deleted and how many went into each album; Next jumps to the next unfinished month in place.
+- Album page Select mode: select photos or All, then Favourite / Unfavourite (real Photos favourites), Move to another emoji album, Remove from album, or Delete (goes to the review grid and the iOS prompt).
+- The new-album name hint reads "Trips", not "Golf".
+
 ## Rules
 
 - A swipe records intent only. Deleting needs the review grid plus the iOS prompt.

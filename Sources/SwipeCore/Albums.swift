@@ -59,6 +59,13 @@ public struct FilingLedger: Equatable, Sendable {
         added[photo] = albums.isEmpty ? nil : albums
     }
 
+    /// How many photos this deck has put into each album, for the finish screen.
+    public var filedCounts: [String: Int] {
+        added.values.reduce(into: [:]) { counts, albums in
+            for album in albums { counts[album, default: 0] += 1 }
+        }
+    }
+
     /// The albums to remove the photo from, once. Empty when the swipe filed nothing.
     public mutating func takeBack(_ photo: String) -> [String] {
         added.removeValue(forKey: photo) ?? []

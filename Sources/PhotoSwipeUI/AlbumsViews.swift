@@ -84,13 +84,17 @@ struct AlbumsSection: View {
     }
 }
 
-/// One emoji album, edge to edge, newest first. Swipe runs the deck on every photo in it.
+/// One emoji album, edge to edge, newest first. Swipe runs the deck on every photo in it;
+/// Select picks photos to favourite, move, take out or delete in one go.
 struct AlbumView: View {
     let shelfID: String
     @Environment(AppModel.self) private var model
     @Environment(\.dismiss) private var dismiss
     @State private var deck: Deck?
     @State private var editor: EditorTarget?
+    @State private var selecting = false
+    @State private var picked: Set<String> = []
+    @State private var showTrash = false
 
     var body: some View {
         let album = model.state.shelf.first { $0.id == shelfID }
@@ -102,51 +106,188 @@ struct AlbumView: View {
                                        description: Text("Select \(album?.emoji ?? "it") on the swipe screen, then swipe right."))
                     .padding(.top, 60)
             } else {
-                Text(ids.count == 1 ? "1 photo" : "\(ids.count) photos")
+                Text(selecting ? (picked.isEmpty ? "Tap photos to select" : "\(picked.count) selected")
+                               : (ids.count == 1 ? "1 photo" : "\(ids.count) photos"))
                     .eyebrow()
                     .monospacedDigit()
+                    .contentTransition(.numericText())
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .padding(.horizontal, 20)
                     .padding(.vertical, 10)
                 LazyVGrid(columns: thumbColumns, spacing: 2) {
                     ForEach(ids, id: \.self) { id in
                         Thumb(id: id)
+                            .overlay(alignment: .bottomLeading) {
+                                if model.library.favorites.contains(id) {
+                                    Image(systemName: "heart.fill")
+                                        .font(.caption.weight(.bold))
+                                        .foregroundStyle(.white)
+                                        .shadow(radius: 3)
+                                        .padding(6)
+                                        .transition(.scale.combined(with: .opacity))
+                                }
+                            }
+                            .overlay { if selecting && picked.contains(id) { Theme.keep.opacity(0.25) } }
+                            .overlay(alignment: .bottomTrailing) {
+                                if selecting { SelectMark(on: picked.contains(id)).padding(6) }
+                            }
+                            .contentShape(Rectangle())
                             .onTapGesture {
-                                deck = Deck(title: title, ids: Array(ids.drop { $0 != id }), everyPhoto: true)
+                                if selecting {
+                                    Haptics.tick(model.hapticsEnabled)
+                                    withAnimation(.snappy(duration: 0.2)) { toggle(id) }
+                                } else {
+                                    deck = Deck(title: title, ids: Array(ids.drop { $0 != id }), everyPhoto: true)
+                                }
                             }
                             .contextMenu {
-                                Button("Remove from album", systemImage: "rectangle.stack.badge.minus") {
-                                    withAnimation(.spring(duration: 0.35)) { model.unfile(id, from: [shelfID]) }
+                                if !selecting {
+                                    Button("Remove from album", systemImage: "rectangle.stack.badge.minus") {
+                                        withAnimation(.spring(duration: 0.35)) { model.unfile(id, from: [shelfID]) }
+                                    }
                                 }
                             }
                             .transition(.scale(scale: 0.8).combined(with: .opacity))
                     }
                 }
+                .animation(.spring(duration: 0.35), value: ids)
             }
         }
         .background(Theme.canvas.ignoresSafeArea())
+        .safeAreaInset(edge: .bottom) {
+            if selecting {
+                actionBar(ids: ids)
+                    .transition(.move(edge: .bottom).combined(with: .opacity))
+            }
+        }
+        .animation(.spring(duration: 0.35), value: selecting)
         .navigationTitle(title)
         .toolbar {
             ToolbarItemGroup(placement: .primaryAction) {
-                Button("Swipe") { deck = Deck(title: title, ids: ids, everyPhoto: true) }
-                    .disabled(ids.isEmpty)
-                Menu {
-                    if let album { Button("Edit", systemImage: "pencil") { editor = .edit(album) } }
-                    Button("Open Photos", systemImage: "photo.on.rectangle") { openPhotosApp() }
-                    Button("Remove from rail", systemImage: "minus.circle") {
-                        model.removeFromShelf(shelfID)
-                        dismiss()
+                if selecting {
+                    Button(picked.count == ids.count ? "None" : "All") {
+                        withAnimation(.snappy(duration: 0.2)) {
+                            picked = picked.count == ids.count ? [] : Set(ids)
+                        }
                     }
-                } label: {
-                    Image(systemName: "ellipsis")
+                    Button("Done") { withAnimation { selecting = false; picked = [] } }
+                        .fontWeight(.semibold)
+                } else {
+                    Button("Select") { withAnimation { selecting = true } }
+                        .disabled(ids.isEmpty)
+                    Button("Swipe") { deck = Deck(title: title, ids: ids, everyPhoto: true) }
+                        .disabled(ids.isEmpty)
+                    Menu {
+                        if let album { Button("Edit", systemImage: "pencil") { editor = .edit(album) } }
+                        Button("Open Photos", systemImage: "photo.on.rectangle") { openPhotosApp() }
+                        Button("Remove from rail", systemImage: "minus.circle") {
+                            model.removeFromShelf(shelfID)
+                            dismiss()
+                        }
+                    } label: {
+                        Image(systemName: "ellipsis")
+                    }
+                    .accessibilityLabel("More")
                 }
-                .accessibilityLabel("More")
             }
         }
         .task { await model.refreshAlbums() }
         .sheet(item: $editor) { target in AlbumEditor(editing: target.album) }
+        .sheet(isPresented: $showTrash) { ReviewDeleteView() }
         .cover(item: $deck) { deck in
             SwipeDeckView(deck: deck, state: model.state)
         }
+    }
+
+    private func toggle(_ id: String) {
+        if picked.contains(id) { picked.remove(id) } else { picked.insert(id) }
+    }
+
+    /// Favourite, Move to, Remove, Delete: one row, evenly spaced.
+    private func actionBar(ids: [String]) -> some View {
+        let chosen = ids.filter(picked.contains)
+        let allFavourite = !chosen.isEmpty && chosen.allSatisfy(model.library.favorites.contains)
+        let others = model.state.shelf.filter { $0.id != shelfID }
+        return HStack(spacing: 0) {
+            ActionItem(icon: allFavourite ? "heart.slash" : "heart", label: allFavourite ? "Unfavourite" : "Favourite", tint: Theme.ink) {
+                withAnimation(.spring(duration: 0.3)) { model.setFavorite(chosen, to: !allFavourite) }
+                Haptics.success(model.hapticsEnabled)
+            }
+            Menu {
+                ForEach(others) { target in
+                    Button(target.title) {
+                        withAnimation(.spring(duration: 0.35)) { model.move(chosen, from: shelfID, to: target.id) }
+                        Haptics.success(model.hapticsEnabled)
+                        picked = []
+                    }
+                }
+            } label: {
+                ActionLabel(icon: "arrow.right.circle", label: "Move to", tint: Theme.ink)
+            }
+            .disabled(others.isEmpty)
+            .frame(maxWidth: .infinity)
+            ActionItem(icon: "rectangle.stack.badge.minus", label: "Remove", tint: Theme.ink) {
+                withAnimation(.spring(duration: 0.35)) { for id in chosen { model.unfile(id, from: [shelfID]) } }
+                picked = []
+            }
+            ActionItem(icon: "trash", label: "Delete", tint: Theme.delete) {
+                // Deleting still goes through the review grid and Apple's own confirmation.
+                model.markForDeletion(chosen)
+                picked = []
+                showTrash = true
+            }
+        }
+        .disabled(chosen.isEmpty)
+        .opacity(chosen.isEmpty ? 0.45 : 1)
+        .padding(.vertical, 10)
+        .padding(.horizontal, 8)
+        .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 22, style: .continuous))
+        .padding(.horizontal, 12)
+        .padding(.bottom, 4)
+    }
+}
+
+private struct SelectMark: View {
+    let on: Bool
+
+    var body: some View {
+        ZStack {
+            Circle().fill(on ? Theme.keep : .black.opacity(0.3))
+            Circle().strokeBorder(.white, lineWidth: 1.5)
+            if on {
+                Image(systemName: "checkmark").font(.caption2.weight(.heavy)).foregroundStyle(Theme.canvas)
+                    .transition(.scale.combined(with: .opacity))
+            }
+        }
+        .frame(width: 24, height: 24)
+        .animation(.spring(duration: 0.25, bounce: 0.4), value: on)
+    }
+}
+
+private struct ActionItem: View {
+    let icon: String
+    let label: String
+    let tint: Color
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: action) { ActionLabel(icon: icon, label: label, tint: tint) }
+            .buttonStyle(PressStyle())
+            .frame(maxWidth: .infinity)
+    }
+}
+
+private struct ActionLabel: View {
+    let icon: String
+    let label: String
+    let tint: Color
+
+    var body: some View {
+        VStack(spacing: 5) {
+            Image(systemName: icon).font(.title3)
+            Text(label).font(.caption.weight(.medium))
+        }
+        .foregroundStyle(tint)
+        .frame(minHeight: 44)
     }
 }

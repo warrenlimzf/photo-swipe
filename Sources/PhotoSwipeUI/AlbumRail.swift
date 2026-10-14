@@ -1,7 +1,7 @@
 import SwiftUI
 import SwipeCore
 
-/// The emoji albums down the right edge of the swipe screen. Tap to select (it stays on), ＋ to add.
+/// The emoji albums in a row under the photo on the swipe screen. Tap to select (it stays on), ＋ to add.
 struct AlbumRail: View {
     @Binding var selected: Set<String>
     let onAdd: () -> Void
@@ -12,22 +12,28 @@ struct AlbumRail: View {
     @State private var bubbleTask: Task<Void, Never>?
 
     var body: some View {
-        ScrollView(.vertical, showsIndicators: false) {
-            VStack(spacing: 10) {
-                ForEach(model.state.shelf) { album in
-                    emojiButton(album)
-                        .transition(reduceMotion ? .opacity : .scale(scale: 0.6).combined(with: .opacity))
+        // One row, centred while it fits, scrolling sideways once it doesn't.
+        GeometryReader { geo in
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: 12) {
+                    ForEach(model.state.shelf) { album in
+                        emojiButton(album)
+                            .transition(reduceMotion ? .opacity : .scale(scale: 0.6).combined(with: .opacity))
+                    }
+                    addButton
                 }
-                addButton
+                .padding(.horizontal, 6)
+                .frame(minWidth: geo.size.width)
+                .frame(height: geo.size.height)
+                .animation(reduceMotion ? .easeOut(duration: 0.15) : .spring(duration: 0.35, bounce: 0.3), value: model.state.shelf.map(\.id))
             }
-            .padding(.vertical, 4)
-            .animation(reduceMotion ? .easeOut(duration: 0.15) : .spring(duration: 0.35, bounce: 0.3), value: model.state.shelf.map(\.id))
+            .scrollBounceBehavior(.basedOnSize)
+            // The name bubble rises above the row, so clipping is off; the mask then
+            // clips left and right only.
+            .scrollClipDisabled()
+            .mask { Rectangle().padding(.vertical, -80) }
         }
-        // The name bubble pokes out to the left of the rail, so clipping is off; the mask then
-        // clips top and bottom only, so a long rail never draws over the top bar or the buttons.
-        .scrollClipDisabled()
-        .frame(width: 50)
-        .mask { Rectangle().padding(.leading, -320) }
+        .frame(height: 54)
     }
 
     private func emojiButton(_ album: ShelfAlbum) -> some View {
@@ -37,16 +43,17 @@ struct AlbumRail: View {
                 .font(.system(size: 24))
                 .frame(width: 46, height: 46)
                 .background(.ultraThinMaterial, in: Circle())
+                .background { if isOn { Circle().fill(Theme.keep.opacity(0.25)).shadow(color: Theme.keep.opacity(0.6), radius: 10) } }
                 .overlay { Circle().strokeBorder(isOn ? Theme.keep : Theme.hairline, lineWidth: isOn ? 2.5 : 1) }
                 .scaleEffect(isOn && !reduceMotion ? 1.06 : 1)
                 .opacity(selected.isEmpty || isOn ? 1 : 0.7)
         }
         .buttonStyle(PressStyle())
-        .overlay(alignment: .trailing) {
+        .overlay(alignment: .top) {
             if bubble == album.id {
                 NameBubble(name: album.name, isOn: isOn)
-                    .offset(x: -56)
-                    .transition(reduceMotion ? .opacity : .offset(x: 16).combined(with: .opacity))
+                    .offset(y: -46)
+                    .transition(reduceMotion ? .opacity : .offset(y: 12).combined(with: .opacity))
                     .allowsHitTesting(false)
             }
         }

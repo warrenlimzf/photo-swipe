@@ -9,6 +9,8 @@ struct Deck: Identifiable {
     let ids: [String]
     /// True for an album being cleaned up: offer every photo, not just undecided ones.
     var everyPhoto = false
+    /// Set when the deck is one month, so the finish screen can offer the next one.
+    var month: MonthKey? = nil
 }
 
 @MainActor @Observable
@@ -36,6 +38,10 @@ public final class AppModel {
         fileURL = folder.appendingPathComponent("review-state.json")
         state = StateFile.load(from: fileURL)
         hapticsEnabled = UserDefaults.standard.object(forKey: "haptics") as? Bool ?? true
+    }
+
+    func monthName(_ key: MonthKey) -> String {
+        "\(calendar.monthSymbols[max(0, min(11, key.month - 1))]) \(key.year)"
     }
 
     var today: String { DayStamp.string(Date(), calendar: calendar) }
@@ -153,6 +159,23 @@ public final class AppModel {
                 try await library.remove(photo, fromAlbum: album.albumID)
             }
         }
+    }
+
+    /// Favourites or unfavourites photos in Photos, in order with the album writes.
+    func setFavorite(_ ids: [String], to on: Bool) {
+        enqueue { [self] in try await library.setFavorite(ids, to: on) }
+    }
+
+    /// Moves photos from one emoji album to another (skipping ones already there).
+    func move(_ ids: [String], from source: String, to target: String) {
+        let have = Set(albumMembers[target] ?? [])
+        for id in ids where !have.contains(id) { file(id, into: [target]) }
+        for id in ids { unfile(id, from: [source]) }
+    }
+
+    /// Marks photos for deletion. They still go through the review grid and the iOS prompt.
+    func markForDeletion(_ ids: [String]) {
+        apply { state in for id in ids { state.decide(id, .delete, day: today) } }
     }
 
     /// The album's Photos id, recreating the album if the user deleted it in Photos.

@@ -86,3 +86,25 @@ import Testing
     #expect(ReviewSession(ids: ["a", "b"], state: state).ids == ["b"])
     #expect(ReviewSession(ids: ["a", "b"], state: state, onlyUndecided: false).ids == ["a", "b"])
 }
+
+@Test func ledgerCountsWhatEachAlbumGot() {
+    var ledger = FilingLedger()
+    ledger.record("p1", albums: ["a", "b"])
+    ledger.record("p2", albums: ["a"])
+    #expect(ledger.filedCounts == ["a": 2, "b": 1])
+    _ = ledger.takeBack("p1")
+    #expect(ledger.filedCounts == ["a": 1])
+}
+
+@Test func nextMonthSkipsFinishedMonths() {
+    let months = [
+        MonthGroup(key: MonthKey(year: 2026, month: 10), ids: ["a"]),
+        MonthGroup(key: MonthKey(year: 2026, month: 9), ids: ["b"]),
+        MonthGroup(key: MonthKey(year: 2026, month: 8), ids: ["c"]),
+    ]
+    var state = ReviewState()
+    state.decide("b", .keep, day: "d")
+    #expect(Grouping.nextMonth(after: MonthKey(year: 2026, month: 10), in: months, state: state)?.key == MonthKey(year: 2026, month: 8))
+    #expect(Grouping.nextMonth(after: MonthKey(year: 2026, month: 8), in: months, state: state) == nil)
+    #expect(Grouping.nextMonth(after: MonthKey(year: 2020, month: 1), in: months, state: state) == nil)
+}

@@ -40,7 +40,8 @@ struct HomeView: View {
                     }
                     ForEach(model.months, id: \.key) { month in
                         MonthSection(group: month, title: monthName(month.key)) {
-                            open(monthName(month.key), month.ids)
+                            Haptics.tick(model.hapticsEnabled)
+                            deck = Deck(title: monthName(month.key), ids: month.ids, month: month.key)
                         }
                         .zoomSource(monthName(month.key), in: zoom)
                         .rise(ready, order: 2)
@@ -101,9 +102,7 @@ struct HomeView: View {
         deck = Deck(title: title, ids: ids)
     }
 
-    private func monthName(_ key: MonthKey) -> String {
-        "\(model.calendar.monthSymbols[max(0, min(11, key.month - 1))]) \(key.year)"
-    }
+    private func monthName(_ key: MonthKey) -> String { model.monthName(key) }
 
     /// Three figures on one line, divided by hairlines, over a thin line of progress.
     private var summary: some View {
@@ -219,6 +218,7 @@ private struct MonthSection: View {
                                 Image(systemName: "checkmark.circle.fill")
                                     .font(.title3)
                                     .foregroundStyle(Theme.keep)
+                                    .symbolEffect(.bounce, value: done)
                                     .transition(.scale(scale: 0.5).combined(with: .opacity))
                             }
                         }
