@@ -5,10 +5,11 @@ public struct ReviewSession: Equatable, Sendable {
     public let ids: [String]
     public private(set) var index = 0
 
-    /// Starts on the photos not yet decided. If all are decided, the whole stack is offered again.
-    public init(ids: [String], state: ReviewState) {
+    /// Starts on the photos not yet decided. If all are decided, or `onlyUndecided` is false
+    /// (an album being cleaned up), the whole stack is offered.
+    public init(ids: [String], state: ReviewState, onlyUndecided: Bool = true) {
         let undecided = ids.filter { state.decisions[$0] == nil }
-        self.ids = undecided.isEmpty ? ids : undecided
+        self.ids = !onlyUndecided || undecided.isEmpty ? ids : undecided
     }
 
     public var current: String? { index < ids.count ? ids[index] : nil }
