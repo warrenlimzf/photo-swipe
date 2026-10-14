@@ -36,4 +36,5 @@ Working name "Photo Swipe"; the App Store name is still Warren's call. Repo `war
 - **Look = "Gallery" (Warren picked it 14 Oct 2026 after rejecting a navy/ivory hero-card version as "very AI").** Always dark, black canvas, photos edge to edge with 2pt gaps, no cards, tiles, gradient heroes or pill chips. System font only, tabular numerals. Cool off-black canvas, warm-white type, no accent colour; soft green and coral only for keep/delete. Labels in small tracked capitals (`.eyebrow()`) beside large names. `Theme` lives in `Platform.swift`.
 - Test with real photographs, never generated gradient images: blobs make any layout look AI-made. `tools/` holds the icon script; the simulator photo set is rebuilt from macOS wallpapers.
 
+In flight: emoji albums for v1.1.0, plan `docs/superpowers/plans/2026-10-14-emoji-albums.md` (not started).
 State and next steps: `SESSION_HANDOFF.md`.
