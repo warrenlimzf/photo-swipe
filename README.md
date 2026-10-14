@@ -105,7 +105,7 @@ Click the green **Code** button on this page, then **Download ZIP**, and unzip i
 cd ~ && (git clone https://github.com/warrenlimzf/photo-swipe.git 2>/dev/null || (cd photo-swipe && git fetch && git reset --hard @{u})) && open ~/photo-swipe/PhotoSwipe.xcodeproj
 ```
 
-> 💡 Replacing the code also resets the Bundle Identifier, so redo step 6 after each update. Your progress in the app lives on your phone and is kept.
+> ⚠️ **Every download puts the Bundle Identifier back to `com.warrenlimzf.photoswipe`.** That happens with the ZIP and with this command, on the first install and on every update. So **do step 6 every single time**, or Xcode shows a red "Failed Registering Bundle Identifier" error. Your progress in the app lives on your phone and is kept.
 
 ### 4️⃣ Open the project
 In the folder, double-click **`PhotoSwipe.xcodeproj`**. Xcode opens.
@@ -118,6 +118,8 @@ In the left sidebar click the blue **PhotoSwipe** icon at the top. In the middle
 
 1. In the **Team** menu, pick your name (it says "Personal Team").
 2. In **Bundle Identifier**, replace `com.warrenlimzf.photoswipe` with your own, for example `com.yourname.photoswipe`. Lowercase letters, numbers and dots only, no spaces.
+
+> 🔁 **Do this on every install and every update.** Each fresh download comes with `com.warrenlimzf.photoswipe` again. Type the **same** ID you used last time: a new ID installs a second, separate app and your progress stays in the old one. Jot it down somewhere.
 
 > ⚠️ **Don't skip the second part.** Every app ID can only belong to one Apple account, and `com.warrenlimzf.photoswipe` is already mine. If you keep it, Xcode shows two red errors: **"Failed Registering Bundle Identifier … is not available"** and **"No profiles for 'com.warrenlimzf.photoswipe' were found"**. Change the ID, and both disappear (click **Try Again** if they don't clear by themselves).
 
@@ -165,8 +167,8 @@ Prefer not to make an account? Bookmark the [Releases page](https://github.com/w
 
 | You got the code by | Do this |
 |---|---|
-| **Download ZIP** | Download the new ZIP, open its `PhotoSwipe.xcodeproj`, choose your team again, press **Run**. |
-| **Terminal** | Paste the same command from step 3 again, redo step 6, press **Run**. |
+| **Download ZIP** | Download the new ZIP, open its `PhotoSwipe.xcodeproj`, redo [step 6](#6%EF%B8%8F⃣-choose-your-team-and-give-the-app-your-own-id-required) (team **and** your Bundle Identifier), press **Run**. |
+| **Terminal** | Paste the same command from step 3 again, redo [step 6](#6%EF%B8%8F⃣-choose-your-team-and-give-the-app-your-own-id-required) (team **and** your Bundle Identifier), press **Run**. |
 
 No cable needed once you've set up [installing over Wi-Fi](#-skip-the-cable-install-over-wi-fi).
 
@@ -253,7 +255,7 @@ I'm a finance student, not a software engineer. I wrote the brief, made the desi
 | **"Untrusted Developer"** when opening the app | iPhone: **Settings → General → VPN & Device Management**, tap your Apple ID, **Trust**. [Step 10](#-trust-yourself-on-the-iphone-then-allow-photos) |
 | **The app won't open after about a week** | The 7-day limit. Plug in and press **Run** again. [Details](#-the-7-day-renewal) |
 | **"Signing requires a development team"** | You skipped step 6. Pick your name under **Team**. |
-| **"Failed Registering Bundle Identifier"** or **"No profiles for 'com.warrenlimzf.photoswipe' were found"** | That ID is taken. Change **Bundle Identifier** to your own, like `com.yourname.photoswipe`, then **Try Again**. [Step 6](#6%EF%B8%8F⃣-choose-your-team-and-give-the-app-your-own-id-required) |
+| **"Failed Registering Bundle Identifier"** or **"No profiles for 'com.warrenlimzf.photoswipe' were found"** | That ID is taken, and every fresh download resets it. Change **Bundle Identifier** to your own, like `com.yourname.photoswipe`, then **Try Again**. [Step 6](#6%EF%B8%8F⃣-choose-your-team-and-give-the-app-your-own-id-required) |
 | **"Developer App Certificate is not trusted"** on your Mac | Click OK, then trust yourself on the iPhone. [Step 10](#-trust-yourself-on-the-iphone-then-allow-photos) |
 | **The app's photo message mentions only "keep and delete"** | You have an old copy. Download the latest ZIP or `git pull`, then **Run**. Your progress is kept. |
 | **A box asks for a password to allow `codesign`** | It wants your **Mac login password**. Type it and click **Always Allow**. |
