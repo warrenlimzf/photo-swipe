@@ -17,3 +17,9 @@
 - Cause: system `onDrag`/`onDrop` (slow lift, faded placeholder, reorder only when crossing a drop target, contextMenu competing for the hold).
 - Fix: custom `LongPressGesture(0.22s).sequenced(before: DragGesture)`; held emoji follows the finger un-animated, others shift by slot offsets, order committed once on release with animations off. Edit/Remove moved to a hold-without-moving dialog.
 - Don't retry: system drag and drop for in-row reordering.
+
+## 2026-10-15 — landscape photos and videos only swiped on the picture (v1.7.1)
+- Seen: on a landscape photo or video, dragging in the space above or below the picture did nothing; once a video played, swipes on it could fail too.
+- Cause: `CardView` took the photo's own aspect ratio, so a landscape card was a short strip and the band around it was empty page. The playing video was an AVKit `VideoPlayer`, which takes touches for its own controls.
+- Fix: every card is one portrait rectangle (`cardRatio` 3:4) with `contentShape`; wider media sits fitted over a blurred copy of itself. Video plays in a bare `AVPlayerLayer` view with hit testing off; tapping the card pauses/resumes.
+- Don't retry: AVKit `VideoPlayer` on the card (it eats drags), or sizing the card to the photo.

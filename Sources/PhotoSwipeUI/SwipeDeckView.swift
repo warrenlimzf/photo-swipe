@@ -4,6 +4,8 @@ import SwipeCore
 
 /// Pixel size the swipe cards load their photos at.
 private let cardSide: CGFloat = 1600
+/// Width over height of every swipe card.
+private let cardRatio: CGFloat = 3 / 4
 
 /// A card that has been decided and is on its way off screen.
 private struct Leaving: Identifiable {
@@ -465,38 +467,53 @@ private struct SmallButton: View {
     }
 }
 
-/// The card is the photo: same shape, nothing around it.
+/// Every card is the same portrait rectangle, so a drag anywhere on it swipes. Portrait photos fill
+/// it; wider ones (landscape, square, most videos) sit in the middle over a blurred copy of themselves.
 private struct CardView: View {
     let id: String
     let drag: CGSize
     var filing = ""
     @Environment(AppModel.self) private var model
     @State private var player: AVPlayer?
+    @State private var paused = false
 
     var body: some View {
         let ref = model.library.ref(id)
-        let ratio = ref.map { CGFloat($0.pixelWidth) / CGFloat(max($0.pixelHeight, 1)) } ?? 0.75
+        let ratio = ref.map { CGFloat($0.pixelWidth) / CGFloat(max($0.pixelHeight, 1)) } ?? cardRatio
+        let wide = ratio > cardRatio + 0.01
         Theme.fill
-            .aspectRatio(ratio, contentMode: .fit)
+            .aspectRatio(min(ratio, cardRatio), contentMode: .fit)
+            .overlay {
+                if wide {
+                    AssetImage(id: id, side: 300, fill: true)
+                        .blur(radius: 28)
+                        .overlay(Color.black.opacity(0.18))
+                }
+            }
             .overlay {
                 if let player {
-                    VideoPlayer(player: player)
+                    // Touches pass through the video, so it swipes like a photo; a tap pauses it.
+                    PlayerLayer(player: player)
+                        .aspectRatio(ratio, contentMode: .fit)
+                        .allowsHitTesting(false)
                 } else {
                     // The small copy is already in memory from the library, so there is never an empty card.
-                    AssetImage(id: id, side: 300, fill: true)
-                    AssetImage(id: id, side: cardSide, fill: true, placeholder: false)
-                    if ref?.isVideo == true {
-                        Button { play() } label: {
-                            Image(systemName: "play.fill")
-                                .font(.title)
-                                .foregroundStyle(.white)
-                                .frame(width: 76, height: 76)
-                                .background(Theme.cta, in: Circle())
-                                .shadow(color: Theme.b500.opacity(0.4), radius: 12, y: 6)
-                        }
-                        .buttonStyle(PressStyle())
-                        .accessibilityLabel("Play video")
+                    AssetImage(id: id, side: 300, fill: !wide, placeholder: !wide)
+                    AssetImage(id: id, side: cardSide, fill: !wide, placeholder: false)
+                }
+            }
+            .overlay {
+                if ref?.isVideo == true && (player == nil || paused) {
+                    Button { play() } label: {
+                        Image(systemName: "play.fill")
+                            .font(.title)
+                            .foregroundStyle(.white)
+                            .frame(width: 76, height: 76)
+                            .background(Theme.cta, in: Circle())
+                            .shadow(color: Theme.b500.opacity(0.4), radius: 12, y: 6)
                     }
+                    .buttonStyle(PressStyle())
+                    .accessibilityLabel("Play video")
                 }
             }
             .clipped()
@@ -504,6 +521,8 @@ private struct CardView: View {
             .overlay(alignment: .topLeading) { stamp(filing.isEmpty ? "Keep" : "Keep \(filing)", "checkmark", Theme.keep, drag.width) }
             .overlay(alignment: .topTrailing) { stamp("Delete", "xmark", Theme.delete, -drag.width) }
             .clipShape(RoundedRectangle(cornerRadius: 30, style: .continuous))
+            .contentShape(RoundedRectangle(cornerRadius: 30, style: .continuous))
+            .onTapGesture { togglePause() }
             .shadow(color: Theme.ink.opacity(0.18), radius: 24, y: 14)
             .onDisappear { player?.pause() }
     }
@@ -524,7 +543,18 @@ private struct CardView: View {
             .opacity(strength)
     }
 
+    private func togglePause() {
+        guard let player else { return }
+        if paused { player.play() } else { player.pause() }
+        paused.toggle()
+    }
+
     private func play() {
+        if let player {
+            player.play()
+            paused = false
+            return
+        }
         Task {
             guard let item = await model.library.playerItem(for: id) else { return }
             let player = AVPlayer(playerItem: item)
@@ -533,3 +563,32 @@ private struct CardView: View {
         }
     }
 }
+
+#if canImport(UIKit)
+/// A bare video surface with no controls, so it never takes the card's touches.
+private struct PlayerLayer: UIViewRepresentable {
+    let player: AVPlayer
+
+    final class Surface: UIView {
+        override static var layerClass: AnyClass { AVPlayerLayer.self }
+        var playerLayer: AVPlayerLayer { layer as! AVPlayerLayer }
+    }
+
+    func makeUIView(context: Context) -> Surface {
+        let view = Surface()
+        view.isUserInteractionEnabled = false
+        view.playerLayer.videoGravity = .resizeAspect
+        view.playerLayer.player = player
+        return view
+    }
+
+    func updateUIView(_ view: Surface, context: Context) {
+        view.playerLayer.player = player
+    }
+}
+#else
+private struct PlayerLayer: View {
+    let player: AVPlayer
+    var body: some View { VideoPlayer(player: player) }
+}
+#endif
