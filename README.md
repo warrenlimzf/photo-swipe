@@ -15,7 +15,7 @@
 <p align="center">
   <img src="docs/screenshots/library.jpg" width="23%" alt="Library: what is left to sort, quick decks and albums">
   <img src="docs/screenshots/months.jpg" width="23%" alt="Months as cards, each a mosaic of its photos">
-  <img src="docs/screenshots/swipe.jpg" width="23%" alt="Swiping through a month">
+  <img src="docs/screenshots/swipe.jpg" width="23%" alt="Swiping through an album">
   <img src="docs/screenshots/review.jpg" width="23%" alt="Reviewing photos before they are deleted">
 </p>
 
@@ -353,5 +353,7 @@ House rules, if you change it: rules go in `SwipeCore` with a test first, swipes
 The idea of sorting photos by swiping is not mine. Several App Store apps do it, and this was built after trying one of them. The code, design and icon here were made from scratch and share nothing with those apps.
 
 Released under the [MIT licence](LICENSE): use it, change it, share it, as long as the notice stays.
+
+📷 **Photo credits:** the photos in the screenshots are free stock from [Unsplash](https://unsplash.com) (Unsplash License), not my own. Every photographer is listed in [NOTICE.md](NOTICE.md).
 
 <sub>Built by <a href="https://www.warrenlimzf.com/">Warren Lim</a> with Claude Code.</sub>
