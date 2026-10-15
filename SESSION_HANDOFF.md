@@ -8,7 +8,7 @@
 ## Status — updated 2026-10-15
 - Shipped today, all released and installed on his iPhone: v1.6.0 (Foodie restyle; he picked Tangerine from Grape / Tangerine / Berry mock-ups), v1.7.0 (⋯ → Colours: six gradient palettes, drifting mesh hero after React Bits' Aurora, matching alternate icons), v1.7.1 (another session: every swipe card is a 3:4 rectangle so drags anywhere swipe; landscape media sits over a blurred copy; video plays in a bare player layer, tap the card to pause; cause in `DEBUG_LOG.md`).
 - **Decision:** a black-and-white "Mono" default was requested via the parent session, then Warren cancelled it himself ("since you've updated the logo, then that's fine. just keep it and we're good"). Tangerine stays the default look and icon. Nothing of Mono was committed; do not resurrect it.
-- Landing page warrenlimzf.com/photo-swipe: rebuilt in tangerine with fresh screens (eba3591), then a "pick your colours" section (efdcdaf) and polish (d87bffd) by sibling sessions. README screenshots re-taken with renamed albums (4ccb1af).
+- Landing page warrenlimzf.com/photo-swipe: rebuilt in tangerine with fresh screens (eba3591), then a "pick your colours" section (efdcdaf: six palettes cycling in a mesh panel over an icon strip, verified at the 10 sizes; CLAUDE.md site row updated e8a04f3) and polish (d87bffd) by sibling sessions. README screenshots re-taken with renamed albums (4ccb1af).
 - Status bar gotchas (iOS 27 ignores the Info.plist key for covers; see-through bar greys the hero) are in `DEBUG_LOG.md`.
 - Not seen in the simulator: the permission screen, the album editor sheet. Not felt on a phone yet: the moving gradient, the haptics.
 
@@ -22,7 +22,7 @@
 - Simulator iPhone 18 Pro (8480D10E-708E-4750-8ED8-53CF3E55D567) holds the real photo set; its home-screen icon was left on an alternate from icon tests. It also holds a 4 s test video (from the "iMac Blue" wallpaper) left by the v1.7.1 session; drop it in the stock-photo rebuild.
 
 ## Process cleanup
-- Stopped: none (the only background shell this session started, a timed screenshot, exited on its own)
+- Stopped: none (the only background shell this session started, a timed screenshot, exited on its own); the colours-section session stopped its temp `python3 -m http.server 8741` (shell bzubkabyt), verified gone
 - Still running on purpose: none
 - Ownership unverified (left alone): CLI-owned MCP servers (drawio, playwright, react-bits); they exit with the CLI
 
