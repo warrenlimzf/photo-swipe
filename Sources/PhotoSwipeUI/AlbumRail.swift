@@ -11,80 +11,141 @@ struct AlbumRail: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var bubble: String?
     @State private var bubbleTask: Task<Void, Never>?
-    @State private var dragging: String?
+    /// The emoji being held, where it started, and the slot it would land in now.
+    @State private var lifted: String?
+    @State private var liftedFrom = 0
+    @State private var landing = 0
+    @State private var dragX: CGFloat = 0
+    @State private var menuFor: ShelfAlbum?
+
+    /// One emoji plus the gap after it.
+    private let slot: CGFloat = 46 + 12
 
     var body: some View {
         // One row, centred while it fits, scrolling sideways once it doesn't.
         GeometryReader { geo in
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(spacing: 12) {
-                    ForEach(model.state.shelf) { album in
-                        emojiButton(album)
+                    ForEach(Array(model.state.shelf.enumerated()), id: \.element.id) { index, album in
+                        emojiButton(album, at: index)
                             .transition(reduceMotion ? .opacity : .scale(scale: 0.6).combined(with: .opacity))
                     }
                     addButton
                 }
-                // Catches a drop that lands between emojis, so the drag always ends cleanly.
-                .onDrop(of: [.text], isTargeted: nil) { _ in dragging = nil; return true }
                 .padding(.horizontal, 6)
                 .frame(minWidth: geo.size.width)
                 .frame(height: geo.size.height)
                 .animation(reduceMotion ? .easeOut(duration: 0.15) : .spring(duration: 0.35, bounce: 0.3), value: model.state.shelf.map(\.id))
             }
             .scrollBounceBehavior(.basedOnSize)
+            .scrollDisabled(lifted != nil)
             // The name bubble rises above the row, so clipping is off; the mask then
             // clips left and right only.
             .scrollClipDisabled()
             .mask { Rectangle().padding(.vertical, -80) }
         }
         .frame(height: 54)
-    }
-
-    private func emojiButton(_ album: ShelfAlbum) -> some View {
-        let isOn = selected.contains(album.id)
-        return Button { toggle(album) } label: {
-            Text(album.emoji)
-                .font(.system(size: 24))
-                .frame(width: 46, height: 46)
-                .background(.ultraThinMaterial, in: Circle())
-                .background { if isOn { Circle().fill(Theme.keep.opacity(0.25)).shadow(color: Theme.keep.opacity(0.6), radius: 10) } }
-                .overlay { Circle().strokeBorder(isOn ? Theme.keep : Theme.hairline, lineWidth: isOn ? 2.5 : 1) }
-                .scaleEffect(isOn && !reduceMotion ? 1.06 : 1)
-                .opacity(selected.isEmpty || isOn ? 1 : 0.7)
-        }
-        .buttonStyle(PressStyle())
-        .overlay(alignment: .top) {
-            if bubble == album.id {
-                NameBubble(name: album.name, isOn: isOn)
-                    .offset(y: -46)
-                    .transition(reduceMotion ? .opacity : .offset(y: 12).combined(with: .opacity))
-                    .allowsHitTesting(false)
-            }
-        }
-        .zIndex(bubble == album.id ? 1 : 0)
-        .opacity(dragging == album.id ? 0.35 : 1)
-        // Hold and drag to move an emoji along the rail. The rest slide out of its way.
-        .onDrag {
-            dragging = album.id
-            return NSItemProvider(object: album.id as NSString)
-        } preview: {
-            Text(album.emoji)
-                .font(.system(size: 24))
-                .frame(width: 46, height: 46)
-                .background(.ultraThinMaterial, in: Circle())
-                .contentShape(.dragPreview, Circle())
-        }
-        .onDrop(of: [.text], delegate: RailDrop(target: album.id, dragging: $dragging, model: model, reduceMotion: reduceMotion))
-        .contextMenu {
-            Button("Edit", systemImage: "pencil") { onEdit(album) }
-            Button("Remove from rail", systemImage: "minus.circle") {
+        .confirmationDialog(menuFor?.title ?? "", isPresented: Binding(get: { menuFor != nil }, set: { if !$0 { menuFor = nil } }),
+                            titleVisibility: .visible, presenting: menuFor) { album in
+            Button("Edit") { onEdit(album) }
+            Button("Remove from rail", role: .destructive) {
                 selected.remove(album.id)
                 model.removeFromShelf(album.id)
             }
         }
-        .accessibilityLabel("\(album.name) album")
-        .accessibilityAddTraits(isOn ? .isSelected : [])
-        .accessibilityHint("When selected, every photo you keep moves into this album")
+    }
+
+    private func emojiButton(_ album: ShelfAlbum, at index: Int) -> some View {
+        let isOn = selected.contains(album.id)
+        let isLifted = lifted == album.id
+        return Text(album.emoji)
+            .font(.system(size: 24))
+            .frame(width: 46, height: 46)
+            .background(.ultraThinMaterial, in: Circle())
+            .background { if isOn { Circle().fill(Theme.keep.opacity(0.25)).shadow(color: Theme.keep.opacity(0.6), radius: 10) } }
+            .overlay { Circle().strokeBorder(isOn ? Theme.keep : Theme.hairline, lineWidth: isOn ? 2.5 : 1) }
+            .scaleEffect(isLifted ? 1.22 : (isOn && !reduceMotion ? 1.06 : 1))
+            .shadow(color: .black.opacity(isLifted ? 0.5 : 0), radius: 10, y: 6)
+            .opacity(selected.isEmpty || isOn || isLifted ? 1 : 0.7)
+            .contentShape(Circle())
+            .overlay(alignment: .top) {
+                if bubble == album.id {
+                    NameBubble(name: album.name, isOn: isOn)
+                        .offset(y: -46)
+                        .transition(reduceMotion ? .opacity : .offset(y: 12).combined(with: .opacity))
+                        .allowsHitTesting(false)
+                }
+            }
+            // The held emoji rides the finger with no animation; the others glide aside.
+            .offset(x: isLifted ? dragX : shift(for: index))
+            .zIndex(isLifted ? 2 : (bubble == album.id ? 1 : 0))
+            .onTapGesture { toggle(album) }
+            .gesture(reorderGesture(album, at: index))
+            .accessibilityElement()
+            .accessibilityLabel("\(album.name) album")
+            .accessibilityAddTraits(isOn ? [.isButton, .isSelected] : .isButton)
+            .accessibilityHint("When selected, every photo you keep moves into this album")
+            .accessibilityAction { toggle(album) }
+            .accessibilityAction(named: "Edit") { onEdit(album) }
+            .accessibilityAction(named: "Remove from rail") {
+                selected.remove(album.id)
+                model.removeFromShelf(album.id)
+            }
+    }
+
+    /// How far an emoji steps aside to open a gap where the held one would land.
+    private func shift(for index: Int) -> CGFloat {
+        guard lifted != nil else { return 0 }
+        if liftedFrom < landing, index > liftedFrom, index <= landing { return -slot }
+        if landing < liftedFrom, index >= landing, index < liftedFrom { return slot }
+        return 0
+    }
+
+    /// Hold to lift, drag to move, let go to drop. A hold with no drag opens Edit / Remove.
+    private func reorderGesture(_ album: ShelfAlbum, at index: Int) -> some Gesture {
+        LongPressGesture(minimumDuration: 0.22)
+            .sequenced(before: DragGesture(minimumDistance: 0, coordinateSpace: .global))
+            .onChanged { value in
+                guard case .second(true, let drag) = value else { return }
+                if lifted == nil {
+                    Haptics.tap(model.hapticsEnabled)
+                    liftedFrom = index
+                    landing = index
+                    withAnimation(.spring(duration: 0.22, bounce: 0.35)) { lifted = album.id }
+                }
+                let x = drag?.translation.width ?? 0
+                var still = Transaction()
+                still.disablesAnimations = true
+                withTransaction(still) { dragX = x }
+                let count = model.state.shelf.count
+                let spot = max(0, min(count - 1, liftedFrom + Int((x / slot).rounded())))
+                if spot != landing {
+                    Haptics.tick(model.hapticsEnabled)
+                    withAnimation(reduceMotion ? .easeOut(duration: 0.12) : .spring(duration: 0.26, bounce: 0.2)) { landing = spot }
+                }
+            }
+            .onEnded { value in
+                guard case .second(true, let drag) = value, lifted == album.id else { return }
+                if abs(drag?.translation.width ?? 0) < 8 {
+                    withAnimation(.spring(duration: 0.22)) { lifted = nil; dragX = 0 }
+                    menuFor = album
+                    return
+                }
+                let from = liftedFrom, to = landing
+                // Settle into the gap, then commit the new order in one frame so nothing jumps.
+                withAnimation(.spring(duration: 0.26, bounce: 0.2)) {
+                    dragX = CGFloat(to - from) * slot
+                } completion: {
+                    var instant = Transaction()
+                    instant.disablesAnimations = true
+                    withTransaction(instant) {
+                        model.moveShelf(album.id, to: to)
+                        lifted = nil
+                        dragX = 0
+                        landing = 0
+                    }
+                }
+            }
     }
 
     private var addButton: some View {
@@ -112,30 +173,6 @@ struct AlbumRail: View {
             guard !Task.isCancelled else { return }
             withAnimation(.easeOut(duration: 0.3)) { bubble = nil }
         }
-    }
-}
-
-/// Reorders the rail live as a dragged emoji passes over another one.
-private struct RailDrop: DropDelegate {
-    let target: String
-    @Binding var dragging: String?
-    let model: AppModel
-    let reduceMotion: Bool
-
-    func dropEntered(info: DropInfo) {
-        guard let moving = dragging, moving != target,
-              let to = model.state.shelf.firstIndex(where: { $0.id == target }) else { return }
-        Haptics.tick(model.hapticsEnabled)
-        withAnimation(reduceMotion ? .easeOut(duration: 0.15) : .spring(duration: 0.3, bounce: 0.25)) {
-            model.moveShelf(moving, to: to)
-        }
-    }
-
-    func dropUpdated(info: DropInfo) -> DropProposal? { DropProposal(operation: .move) }
-
-    func performDrop(info: DropInfo) -> Bool {
-        dragging = nil
-        return true
     }
 }
 
