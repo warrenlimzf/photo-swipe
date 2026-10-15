@@ -253,6 +253,22 @@ struct SettingsView: View {
                     .padding(.horizontal, 16)
                     .padding(.vertical, 10)
                     Rectangle().fill(Theme.hairline).frame(height: 1).padding(.leading, 66)
+                    NavigationLink { ColoursView() } label: {
+                        HStack(spacing: 14) {
+                            HeroFill(animated: false)
+                                .frame(width: 36, height: 36)
+                                .clipShape(RoundedRectangle(cornerRadius: 11, style: .continuous))
+                            Text("Colours").foregroundStyle(Theme.ink)
+                            Spacer()
+                            Text(Theme.palette.name).foregroundStyle(Theme.dim)
+                            Image(systemName: "chevron.right").font(.footnote.weight(.bold)).foregroundStyle(Theme.dim)
+                        }
+                        .padding(.horizontal, 16)
+                        .padding(.vertical, 10)
+                        .contentShape(Rectangle())
+                    }
+                    .buttonStyle(PressStyle())
+                    Rectangle().fill(Theme.hairline).frame(height: 1).padding(.leading, 66)
                     Button { openSystemSettings() } label: {
                         HStack(spacing: 14) {
                             icon("photo.on.rectangle", Theme.b500)

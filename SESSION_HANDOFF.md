@@ -1,4 +1,4 @@
-# Session handoff — v1.6.0: Foodie restyle in tangerine (15 Oct 2026)
+# Session handoff — v1.6.0 Foodie restyle, v1.7.0 colour themes (15 Oct 2026)
 
 > Persistent resume file. Paste into a fresh session (or auto-load via a SessionStart hook).
 > Delta only — project overview, layout, invariants and commands live in CLAUDE.md (auto-loaded).
@@ -10,6 +10,8 @@
 - New shared pieces in `Brand.swift`: `PrintStack` (self-swiping drawing), `HeroShape`, `CompactHero`, `HeroScreen` (pushed screens keep the system back button and edge swipe), `StatusScrim`, `Pill`, `Wordmark`. `PressStyle` buzzes on every press.
 - Status bar fix and what not to retry: `DEBUG_LOG.md`.
 - Verified in the simulator (iPhone 18 Pro, iOS 27, real photo set): Library, swipe + drag stamp, finish screen, review grid + Apple's delete prompt (answered Don't Allow), album + select mode, Bookmarks, Stats, Settings, edge-swipe back. Not seen in the simulator: the permission screen (access already granted), the album editor sheet.
+
+- v1.7.0: Warren said colour should not be one fixed pick ("the user can change their colors", gradients, ideas from React Bits). Added ⋯ → Colours (`Palette.swift`): six gradient palettes, a drifting 3×3 MeshGradient hero modelled on React Bits' Aurora, a Moving colours switch, and a matching alternate app icon per palette (verified the iOS icon-change notice in the simulator). Comparison image: docs/screenshots/palettes.jpg.
 
 ## Next actions
 1. Wait for Warren's notes on v1.6.0 from his phone.
@@ -31,4 +33,4 @@
 - Older items still open: Albums screenshot on the landing page shows his "Girlfriend" album (swap offered); landing page screenshots now predate v1.5.0 Library layout; deferred album review minors (see git history of this file, 14 Oct); undo on a re-reviewed month clears instead of restoring.
 
 ## Pick up here
-Ask Warren how the tangerine v1.6.0 feels on his phone (look, haptics, the drawing on Library).
+Ask Warren how v1.7.0 feels on his phone: which palette he keeps, whether the drift is too much, haptics.

@@ -15,14 +15,15 @@ extension Image {
 }
 #endif
 
-/// Foodie palette: an off-white page, white cards, one tangerine family that does all the
-/// work (hero, buttons, progress, selection), near-black ink. Green and red only mean keep / delete.
-/// Warren picked Tangerine over Grape and Berry on 15 Oct 2026.
+/// Foodie palette: an off-white page, white cards, one gradient family that does all the work
+/// (hero, buttons, progress, selection), near-black ink. The family is the user's pick in
+/// Settings → Colours (`Palette`, tangerine by default). Green and red only mean keep / delete.
 enum Theme {
-    static let b700 = Color(hex: 0xE2520F)
-    static let b500 = Color(hex: 0xFF8A1F)
-    static let b300 = Color(hex: 0xFFC98E)
-    static let b100 = Color(hex: 0xFFF0E2)
+    static var palette: Palette { ThemeStore.shared.palette }
+    static var b700: Color { Color(hex: palette.shades.0) }
+    static var b500: Color { Color(hex: palette.shades.1) }
+    static var b300: Color { Color(hex: palette.shades.2) }
+    static var b100: Color { Color(hex: palette.shades.3) }
 
     static let page = Color(hex: 0xF5F4F2)
     static let card = Color.white
@@ -31,12 +32,16 @@ enum Theme {
     static let muted = Color(hex: 0x6B6878)
     static let dim = Color(hex: 0x9C99A6)
     static let hairline = Color(hex: 0x17151F).opacity(0.08)
-    static let accent = b500
+    static var accent: Color { b500 }
     static let keep = Color(hex: 0x16A363)
     static let delete = Color(hex: 0xE5484D)
 
-    static let hero = LinearGradient(colors: [b700, b500], startPoint: .topLeading, endPoint: .bottomTrailing)
-    static let cta = LinearGradient(colors: [b500, b700], startPoint: .topLeading, endPoint: .bottomTrailing)
+    /// A flat stand-in for the mesh, for thin strips (the status bar scrim, the splash).
+    static var hero: LinearGradient {
+        let m = palette.mesh
+        return LinearGradient(colors: [m[0], m[4], m[8]], startPoint: .topLeading, endPoint: .bottomTrailing)
+    }
+    static var cta: LinearGradient { LinearGradient(colors: [b500, b700], startPoint: .topLeading, endPoint: .bottomTrailing) }
     static let keepFill = LinearGradient(colors: [Color(hex: 0x2BC27B), keep], startPoint: .top, endPoint: .bottom)
     static let deleteFill = LinearGradient(colors: [Color(hex: 0xFF6B6F), delete], startPoint: .top, endPoint: .bottom)
 }

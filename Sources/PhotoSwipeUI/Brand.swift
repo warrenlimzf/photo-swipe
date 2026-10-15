@@ -223,15 +223,15 @@ struct CompactHero<Trailing: View>: View {
     }
 }
 
-/// The brand block itself: gradient, a soft glow top right, rounded bottom corners.
+/// The brand block itself: the moving mesh, a soft glow top right, rounded bottom corners.
 struct HeroShape: View {
     var radius: CGFloat = 40
 
     var body: some View {
         let shape = UnevenRoundedRectangle(bottomLeadingRadius: radius, bottomTrailingRadius: radius, style: .continuous)
-        shape.fill(Theme.hero)
+        HeroFill()
             .overlay(alignment: .topTrailing) {
-                Circle().fill(Theme.b300.opacity(0.5)).frame(width: 300).blur(radius: 70).offset(x: 110, y: -120)
+                Circle().fill(.white.opacity(0.14)).frame(width: 300).blur(radius: 70).offset(x: 110, y: -120)
             }
             .clipShape(shape)
     }

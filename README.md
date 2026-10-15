@@ -19,6 +19,9 @@
   <img src="docs/screenshots/review.jpg" width="23%" alt="Reviewing photos before they are deleted">
 </p>
 
+<p align="center"><img src="docs/screenshots/palettes.jpg" width="96%" alt="Six colour themes: Tangerine, Sunset, Aurora, Ocean, Berry, Midnight"></p>
+<p align="center"><b>🎨 Pick your colours</b> in ⋯ → Colours: six gradient themes that drift slowly, each with a matching app icon.</p>
+
 ---
 
 ## ⏱️ 30-second version
@@ -284,7 +287,7 @@ A swipe counts the instant you let go. The old card flies off on its own while t
 
 ## 🧰 How it was built
 
-I'm a finance student, not a software engineer. I wrote the brief, made the design calls and tested it on my own phone. **[Claude Code](https://claude.com/claude-code) wrote the Swift.** The first design was thrown out for looking machine-made. The second was black with the photos edge to edge. Since v1.6.0 it wears a light, friendly look with one tangerine colour, white cards and a little drawn photo stack that swipes itself. The full story is in the [case study](https://www.warrenlimzf.com/photo-swipe/).
+I'm a finance student, not a software engineer. I wrote the brief, made the design calls and tested it on my own phone. **[Claude Code](https://claude.com/claude-code) wrote the Swift.** The first design was thrown out for looking machine-made. The second was black with the photos edge to edge. Since v1.6.0 it wears a light, friendly look with white cards and a little drawn photo stack that swipes itself; since v1.7.0 you pick the colours. The full story is in the [case study](https://www.warrenlimzf.com/photo-swipe/).
 
 | Piece | What it is |
 |---|---|

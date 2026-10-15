@@ -8,7 +8,7 @@ private enum MonthFilter: String, CaseIterable, Identifiable {
 }
 
 private enum Route: Hashable {
-    case bookmarks, stats, settings
+    case bookmarks, stats, settings, colours
     case album(String)
 }
 
@@ -107,6 +107,7 @@ struct HomeView: View {
                 case .bookmarks: BookmarksView()
                 case .stats: StatsView()
                 case .settings: SettingsView()
+                case .colours: ColoursView()
                 case .album(let id): AlbumView(shelfID: id)
                 }
             }
@@ -124,6 +125,7 @@ struct HomeView: View {
         Section {
             Button("Bookmarks", systemImage: "bookmark") { route = .bookmarks }
             Button("Stats", systemImage: "chart.bar") { route = .stats }
+            Button("Colours", systemImage: "paintpalette") { route = .colours }
             Button("Settings", systemImage: "gearshape") { route = .settings }
         }
     }
