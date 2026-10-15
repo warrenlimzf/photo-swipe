@@ -30,8 +30,6 @@
   @media (min-width: 80rem) { :root { --gutter: 5rem; } }
   * { box-sizing: border-box; }
   html { -webkit-text-size-adjust: 100%; background: var(--canvas); }
-  html.lenis, html.lenis body { height: auto; }
-  .lenis.lenis-smooth { scroll-behavior: auto !important; }
   body { margin: 0; background: var(--canvas); color: var(--ink); font: 400 1.0625rem/1.6 var(--text); -webkit-font-smoothing: antialiased; overflow-x: clip; }
   ::selection { background: #b8d6fc; color: var(--ink); }
   ::-moz-selection { background: #b8d6fc; color: var(--ink); }
@@ -48,10 +46,8 @@
   .nav .wrap { display: flex; align-items: center; justify-content: space-between; }
   .brand { display: flex; align-items: center; gap: .65rem; font-weight: 600; }
   .brand img { width: 32px; height: 32px; border-radius: 8px; box-shadow: 0 4px 12px -4px rgba(23, 21, 31, .35); }
-  .pill { display: inline-flex; align-items: center; gap: .55rem; padding: .6rem 1.1rem; border-radius: 999px; border: 1px solid rgba(255, 255, 255, .45); font-weight: 600; font-size: .95rem; transition: background .3s, color .3s, border-color .3s; }
-  .pill:hover { background: #fff; color: var(--b700); border-color: #fff; }
-  .nav.solid .pill { border-color: var(--hairline); }
-  .nav.solid .pill:hover { background: var(--ink); color: #fff; border-color: var(--ink); }
+  .pill { display: inline-flex; align-items: center; gap: .55rem; padding: .6rem 1.1rem; border-radius: 999px; background: #000; color: #fff; font-weight: 600; font-size: .95rem; box-shadow: 0 10px 24px -14px rgba(0, 0, 0, .6); transition: background .3s, transform .3s var(--ease); }
+  .pill:hover { background: var(--ink); transform: translateY(-1px); }
 
   /* ---------- hero: the app's orange HeroShape, page-sized ---------- */
   .hero { position: relative; isolation: isolate; min-height: 100svh; display: flex; align-items: center; padding-block: 7rem 4rem; overflow: hidden; color: #fff; }
@@ -276,7 +272,7 @@
             </div>
             <div class="prog"><i id="prog"></i></div>
             <div class="deck" id="deck"></div>
-            <div class="rail" aria-hidden="true"><span>⛳</span><span>✈️</span><span>🌸</span><span class="add">+</span></div>
+            <div class="rail" aria-hidden="true"><span>🏞️</span><span>✈️</span><span>🌸</span><span class="add">+</span></div>
             <div class="ctrls">
               <button class="x" id="btn-bin" aria-label="Bin this photo"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"/></svg></button>
               <button class="sm" id="btn-undo" aria-label="Undo"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M9 14 4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11"/></svg></button>
@@ -355,7 +351,6 @@
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/lenis@1.1.13/dist/lenis.min.js"></script>
 <script>
 (() => {
   const PHOTOS = Array.from({ length: 21 }, (_, i) => `img/photos/p${String(i + 1).padStart(2, "0")}.jpg`);
@@ -369,13 +364,8 @@
   const onScroll = () => nav.classList.toggle("solid", scrollY > 40);
   addEventListener("scroll", onScroll, { passive: true }); onScroll();
 
-  // Weighted scroll.
-  if (!reduced && typeof Lenis !== "undefined" && hasGsap) {
-    const lenis = new Lenis({ lerp: 0.09 });
-    lenis.on("scroll", ScrollTrigger.update);
-    gsap.ticker.add((t) => lenis.raf(t * 1000));
-    gsap.ticker.lagSmoothing(0);
-  }
+  // Native scroll only: no smoothing layer, so a flick moves the page exactly like the phone does.
+  if (hasGsap && typeof ScrollTrigger !== "undefined") ScrollTrigger.config({ ignoreMobileResize: true });
 
   /* ---------------- the live deck ---------------- */
   const deck = $("#deck"), big = $("#bigword"), glow = $("#glow");
@@ -539,7 +529,7 @@
   gsap.from(".bigword", { scale: 0.4, opacity: 0, duration: 1.6, ease: "expo.out", delay: 0.4 });
   // Hero parallax: the phone drifts slower than the words as you leave.
   // Leaving the hero: every layer moves at its own speed, so scrolling itself feels alive.
-  const heroST = { trigger: ".hero", start: "top top", end: "bottom top", scrub: 0.6 };
+  const heroST = { trigger: ".hero", start: "top top", end: "bottom top", scrub: true };
   gsap.to(".stage", { yPercent: -16, rotate: -7, scale: 0.94, ease: "none", scrollTrigger: heroST }); // the stage, not the phone, so the swipe wobble never fights the scroll
   gsap.to(".bigword", { yPercent: -70, ease: "none", scrollTrigger: heroST });
   gsap.to(".glow", { scale: 1.6, opacity: 0.6, ease: "none", scrollTrigger: heroST });
@@ -575,7 +565,7 @@
   const keepN = wraps.filter((w) => w.dataset.keep === "1").length, binN = wraps.length - keepN;
   gsap.set(wraps, { rotate: (i, w) => +w.dataset.r, scale: (i, w) => +w.dataset.s });
   const tl = gsap.timeline({
-    scrollTrigger: { trigger: storm, start: "top top", end: "+=220%", pin: true, scrub: 0.8, anticipatePin: 1,
+    scrollTrigger: { trigger: storm, start: "top top", end: "+=220%", pin: true, scrub: true, anticipatePin: 1,
       onUpdate: (st) => { const p = Math.min(1, Math.max(0, (st.progress - 0.3) / 0.5)); $("#pk").textContent = Math.round(p * keepN); $("#pb").textContent = Math.round(p * binN); } },
   });
   tl.fromTo(pics, { scale: 0, opacity: 0, rotate: () => rnd(-120, 120) }, { scale: 1, opacity: 1, rotate: 0, duration: 0.6, stagger: { each: 0.02, from: "random" }, ease: "back.out(1.6)" }, 0)
@@ -590,7 +580,6 @@
       scale: () => (vw() < 640 ? 0.7 : 1), duration: 1.2, stagger: { each: 0.025, from: "random" }, ease: "power3.inOut", immediateRender: false,
     }, 0.9)
     .fromTo(".pile", { opacity: 0 }, { opacity: 1, duration: 0.3, immediateRender: false }, 1.6)
-    .fromTo(wraps.filter((w) => w.dataset.keep === "0"), { opacity: 1, filter: "grayscale(0)" }, { opacity: 0.3, filter: "grayscale(1)", duration: 0.4, immediateRender: false }, 2.0)
     .fromTo(".storm-copy .two", { scale: 0.5, opacity: 0 }, { scale: 1, opacity: 1, duration: 0.6, ease: "back.out(2)", immediateRender: false }, 1.9)
     .to({}, { duration: 0.4 });
 
@@ -614,21 +603,18 @@
   gsap.from("#icons button", { y: 90, rotate: (i) => (i % 2 ? 14 : -14), scale: 0.4, opacity: 0, duration: 1.1, ease: "back.out(1.8)", stagger: 0.07, clearProps: "transform",
     scrollTrigger: { trigger: "#icons", start: "top 92%" } });
 
-  /* ---------------- marquee: drifts on its own, speeds and skews with your scroll ---------------- */
+  /* ---------------- marquee: a steady drift, untouched by scroll speed so nothing shakes ---------------- */
   const tracks = [[$("#t1"), -1], [$("#t2"), 1]];
   const pos = [null, null];
-  let vel = 0;
-  ScrollTrigger.create({ onUpdate: (s) => (vel = gsap.utils.clamp(-40, 40, s.getVelocity() / 120)) });
   gsap.ticker.add(() => {
     tracks.forEach(([el, dir], i) => {
       const half = el.scrollWidth / 2;
       if (pos[i] === null) pos[i] = dir > 0 ? -half : 0;
-      pos[i] += dir * (0.6 + Math.abs(vel) * 0.25);
+      pos[i] += dir * 0.6;
       if (dir < 0 && pos[i] <= -half) pos[i] += half;
       if (dir > 0 && pos[i] >= 0) pos[i] -= half;
-      el.style.transform = `translateX(${pos[i]}px) skewX(${-vel * 0.4}deg)`;
+      el.style.transform = `translate3d(${pos[i]}px, 0, 0)`;
     });
-    vel *= 0.92;
   });
 
   /* ---------------- CTA: photos orbit in, the button pulls toward you ---------------- */
