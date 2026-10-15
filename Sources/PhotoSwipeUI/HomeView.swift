@@ -27,8 +27,9 @@ struct HomeView: View {
         NavigationStack {
             ScrollView {
                 LazyVStack(alignment: .leading, spacing: 0) {
-                    summary
-                        .padding(.horizontal, 20)
+                    // Albums lead, then anything waiting to be deleted. Freed / reviewed / streak
+                    // live in Stats (⋯ menu), not here.
+                    AlbumsSection(onOpen: { route = .album($0.id) }, onNew: { editor = .new })
                         .padding(.top, 8)
                         .rise(ready, order: 0)
                     if !model.state.pendingDeletes.isEmpty {
@@ -36,10 +37,8 @@ struct HomeView: View {
                             .padding(.horizontal, 16)
                             .padding(.top, 24)
                             .transition(.opacity)
+                            .rise(ready, order: 1)
                     }
-                    AlbumsSection(onOpen: { route = .album($0.id) }, onNew: { editor = .new })
-                        .padding(.top, 28)
-                        .rise(ready, order: 1)
                     if !model.onThisDay.isEmpty {
                         onThisDay
                             .padding(.top, 36)
@@ -154,22 +153,6 @@ struct HomeView: View {
         }
     }
 
-    /// Three figures on one line, divided by hairlines, over a thin line of progress.
-    private var summary: some View {
-        let progress = model.state.progress(of: model.allIDs)
-        return VStack(alignment: .leading, spacing: 18) {
-            HStack(spacing: 0) {
-                Figure(value: formatBytes(model.state.bytesFreed), label: "Freed")
-                Rectangle().fill(Theme.hairline).frame(width: 1, height: 34).padding(.horizontal, 18)
-                Figure(value: "\(progress.done)/\(progress.total)", label: "Reviewed")
-                Rectangle().fill(Theme.hairline).frame(width: 1, height: 34).padding(.horizontal, 18)
-                Figure(value: "\(model.streak)", label: "Day streak")
-                Spacer(minLength: 0)
-            }
-            ProgressLine(value: model.reviewedFraction, height: 2)
-        }
-    }
-
     private var trashRow: some View {
         Button { showTrash = true } label: {
             HStack(spacing: 12) {
@@ -227,24 +210,6 @@ struct HomeView: View {
     }
 }
 
-private struct Figure: View {
-    let value: String
-    let label: String
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 4) {
-            Text(value)
-                .font(.title2.weight(.semibold))
-                .monospacedDigit()
-                .foregroundStyle(Theme.ink)
-                .lineLimit(1)
-                .contentTransition(.numericText())
-                .animation(.snappy, value: value)
-            Text(label).eyebrow()
-        }
-    }
-}
-
 /// One month: the year in small capitals, the month's name, a mosaic of its newest photos, a line of progress.
 private struct MonthSection: View {
     let group: MonthGroup
@@ -287,9 +252,10 @@ private struct MonthSection: View {
                 .padding(.top, 44)
                 .padding(.bottom, 16)
                 Mosaic(ids: group.ids)
+                    .overlay { if done { DoneStamp().transition(.opacity) } }
                     .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
                     .padding(.horizontal, 16)
-                ProgressLine(value: Double(progress.done) / Double(max(progress.total, 1)), height: 2,
+                ProgressLine(value: Double(progress.done) / Double(max(progress.total, 1)), height: 6,
                              tint: Theme.keep)
                     .padding(.horizontal, 20)
                     .padding(.top, 14)
@@ -303,6 +269,30 @@ private struct MonthSection: View {
 
     private func percent(_ p: (done: Int, total: Int)) -> Int {
         p.total == 0 ? 0 : Int((Double(p.done) / Double(p.total) * 100).rounded(.down))
+    }
+}
+
+/// A big green tick over a finished month's photos, so Done reads at a glance.
+/// The photos stay in full colour under a light veil; nothing is greyed out.
+private struct DoneStamp: View {
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @State private var shown = false
+
+    var body: some View {
+        ZStack {
+            Color.black.opacity(0.28)
+            Image(systemName: "checkmark")
+                .font(.system(size: 34, weight: .bold))
+                .foregroundStyle(.white)
+                .frame(width: 76, height: 76)
+                .background(Theme.keep, in: Circle())
+                .overlay { Circle().strokeBorder(.white.opacity(0.9), lineWidth: 3) }
+                .shadow(color: .black.opacity(0.45), radius: 14, y: 6)
+                .scaleEffect(shown || reduceMotion ? 1 : 0.6)
+                .opacity(shown ? 1 : 0)
+        }
+        .allowsHitTesting(false)
+        .onAppear { withAnimation(.spring(duration: 0.45, bounce: 0.4)) { shown = true } }
     }
 }
 

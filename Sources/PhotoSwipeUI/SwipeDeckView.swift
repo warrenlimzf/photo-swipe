@@ -48,7 +48,7 @@ struct SwipeDeckView: View {
     var body: some View {
         VStack(spacing: 12) {
             topBar
-            ProgressLine(value: Double(session.index) / Double(max(session.ids.count, 1)), height: 2)
+            ProgressLine(value: Double(session.index) / Double(max(session.ids.count, 1)), height: 5)
                 .padding(.horizontal, 4)
             ZStack {
                 if session.isFinished {
