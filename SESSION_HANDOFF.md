@@ -1,5 +1,11 @@
 # Session handoff — stock-photo marketing shipped + mouse-wheel shake fixed (15 Oct 2026, late)
 
+
+> **15 Oct 2026 (~23:00), v1.7.2 album-rail fix (separate agent, a02faf7, release v1.7.2, installed on his iPhone):** the
+> rail's hold-to-reorder gesture swallowed every drag, so with 7+ albums the + was unreachable. Now a UIKit long-press that
+> gives up when the finger moves, so the rail scrolls; interrupted holds drop the emoji back; adding an album scrolls to the
+> end. Test simulator "PhotoSwipe RailFix Test" (49EC49C3-2A21-431A-B74F-8DB50E9CD7F5) kept, shut down. Warren to check the
+> live landing page with a real mouse wheel (scroll-shake fix ed9a13c).
 > Persistent resume file. Delta only: project overview, layout, invariants and look rules live in CLAUDE.md.
 
 **Role:** Warren reviews on his iPhone and on the live URL; Claude builds, releases (GitHub Release per version), deploys the landing page and installs with `./install-local.sh`. The coordinating session for today's Photo Swipe work is "Icon app web-to-app conversion" (local_91157313-51ab-4493-9e78-49083ecc2c21).
