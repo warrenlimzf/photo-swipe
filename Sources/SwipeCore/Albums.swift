@@ -43,9 +43,10 @@ public enum AlbumInput {
     }
 }
 
-/// Which albums each swipe put a photo into, so undo can take it back out. Lives for one deck.
+/// Which albums each swipe put a photo into (and took it out of), so undo can reverse it. Lives for one deck.
 public struct FilingLedger: Equatable, Sendable {
     private var added: [String: [String]] = [:]
+    private var movedOut: [String: [String]] = [:]
 
     public init() {}
 
@@ -55,8 +56,16 @@ public struct FilingLedger: Equatable, Sendable {
         shelfOrder.filter { selected.contains($0) && !(members[$0]?.contains(photo) ?? false) }
     }
 
-    public mutating func record(_ photo: String, albums: [String]) {
+    /// The other rail albums (in rail order) already holding the photo. A photo lives in one
+    /// emoji album at a time, so filing it into `target` takes it out of these.
+    public static func otherAlbums(for photo: String, target: String, shelfOrder: [String],
+                                   members: [String: Set<String>]) -> [String] {
+        shelfOrder.filter { $0 != target && (members[$0]?.contains(photo) ?? false) }
+    }
+
+    public mutating func record(_ photo: String, albums: [String], movedOutOf: [String] = []) {
         added[photo] = albums.isEmpty ? nil : albums
+        movedOut[photo] = movedOutOf.isEmpty ? nil : movedOutOf
     }
 
     /// How many photos this deck has put into each album, for the finish screen.
@@ -69,5 +78,10 @@ public struct FilingLedger: Equatable, Sendable {
     /// The albums to remove the photo from, once. Empty when the swipe filed nothing.
     public mutating func takeBack(_ photo: String) -> [String] {
         added.removeValue(forKey: photo) ?? []
+    }
+
+    /// The albums to put the photo back into, once. Empty when the swipe moved nothing.
+    public mutating func takeBackMoves(_ photo: String) -> [String] {
+        movedOut.removeValue(forKey: photo) ?? []
     }
 }

@@ -62,7 +62,7 @@
 - 🕰️ **On this day.** Photos from today's date in earlier years.
 - 🧺 **A review pile.** Marked photos wait in a grid. Tap one to rescue it.
 - 🔖 **Bookmarks** for photos you can't decide on yet.
-- 📁 **Emoji albums.** Tap ＋ under the photo on the swipe screen to make one, like ✈️ Trips. On the home screen each album shows its emoji and name. Tap the emoji, swipe right, and the photo lands in that album in Apple Photos. Undo takes it back out. Open an album to **Select** photos and favourite them, move them to another album, take them out or delete them. (Shared iCloud albums aren't possible: Apple gives apps no access to them.)
+- 📁 **Emoji albums.** Tap ＋ under the photo on the swipe screen to make one, like ✈️ Trips. On the home screen each album shows its emoji and name. Tap the emoji, swipe right, and the photo lands in that album in Apple Photos. One album at a time: tapping another emoji switches to it, and a photo filed into one album leaves your other emoji albums. Hold an emoji and drag it to reorder the row. Undo puts everything back. Open an album to **Select** photos and favourite them, move them to another album, take them out or delete them. (Shared iCloud albums aren't possible: Apple gives apps no access to them.)
 - 🎉 **A finish screen** for every month: the tick draws itself, your album emojis burst out, and **Next** takes you straight to the following month.
 - 📊 **Stats:** space freed, photos kept and deleted, and a daily streak.
 

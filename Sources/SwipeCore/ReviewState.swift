@@ -70,6 +70,13 @@ public struct ReviewState: Codable, Equatable, Sendable {
         shelf[i].albumID = albumID
     }
 
+    /// Moves an emoji to a new place on the rail (clamped to the ends).
+    public mutating func moveShelf(_ id: String, to index: Int) {
+        guard let from = shelf.firstIndex(where: { $0.id == id }) else { return }
+        let album = shelf.remove(at: from)
+        shelf.insert(album, at: max(0, min(index, shelf.count)))
+    }
+
     /// Takes the emoji off the rail. The album in Photos is left alone.
     public mutating func removeFromShelf(_ id: String) {
         shelf.removeAll { $0.id == id }

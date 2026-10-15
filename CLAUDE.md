@@ -39,4 +39,5 @@ Working name "Photo Swipe"; the App Store name is still Warren's call. Repo `war
 - Test with real photographs, never generated gradient images: blobs make any layout look AI-made. `tools/` holds the icon script; the simulator photo set is rebuilt from macOS wallpapers.
 
 Emoji albums shipped in v1.1.0 (plan `docs/superpowers/plans/2026-10-14-emoji-albums.md`). v1.3.0 (14 Oct): Library has a To do / Done switch (finished months move to Done, nothing is greyed out); album rows show emoji then name. README is split into First install / Your two Xcode settings / Update / 7-day renewal / Wi-Fi; `install-local.sh` also works over Wi-Fi once paired.
+v1.4.0 (15 Oct): rail is single-select and filing moves a photo out of other rail albums (undo restores); hold-drag reorders the rail; the swipe screen has `interactiveDismissDisabled()` so only the close button leaves.
 State and next steps: `SESSION_HANDOFF.md`.

@@ -131,6 +131,10 @@ public final class AppModel {
         try await library.renameAlbum(album.albumID, to: album.title)
     }
 
+    func moveShelf(_ id: String, to index: Int) {
+        apply { $0.moveShelf(id, to: index) }
+    }
+
     func removeFromShelf(_ id: String) {
         apply { $0.removeFromShelf(id) }
         albumMembers[id] = nil

@@ -1,7 +1,8 @@
 import SwiftUI
 import SwipeCore
 
-/// The emoji albums in a row under the photo on the swipe screen. Tap to select (it stays on), ＋ to add.
+/// The emoji albums in a row under the photo on the swipe screen. Tap one to pick it (tapping
+/// another switches; tapping it again turns it off), hold and drag to reorder, ＋ to add.
 struct AlbumRail: View {
     @Binding var selected: Set<String>
     let onAdd: () -> Void
@@ -10,6 +11,7 @@ struct AlbumRail: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var bubble: String?
     @State private var bubbleTask: Task<Void, Never>?
+    @State private var dragging: String?
 
     var body: some View {
         // One row, centred while it fits, scrolling sideways once it doesn't.
@@ -22,6 +24,8 @@ struct AlbumRail: View {
                     }
                     addButton
                 }
+                // Catches a drop that lands between emojis, so the drag always ends cleanly.
+                .onDrop(of: [.text], isTargeted: nil) { _ in dragging = nil; return true }
                 .padding(.horizontal, 6)
                 .frame(minWidth: geo.size.width)
                 .frame(height: geo.size.height)
@@ -58,6 +62,19 @@ struct AlbumRail: View {
             }
         }
         .zIndex(bubble == album.id ? 1 : 0)
+        .opacity(dragging == album.id ? 0.35 : 1)
+        // Hold and drag to move an emoji along the rail. The rest slide out of its way.
+        .onDrag {
+            dragging = album.id
+            return NSItemProvider(object: album.id as NSString)
+        } preview: {
+            Text(album.emoji)
+                .font(.system(size: 24))
+                .frame(width: 46, height: 46)
+                .background(.ultraThinMaterial, in: Circle())
+                .contentShape(.dragPreview, Circle())
+        }
+        .onDrop(of: [.text], delegate: RailDrop(target: album.id, dragging: $dragging, model: model, reduceMotion: reduceMotion))
         .contextMenu {
             Button("Edit", systemImage: "pencil") { onEdit(album) }
             Button("Remove from rail", systemImage: "minus.circle") {
@@ -67,7 +84,7 @@ struct AlbumRail: View {
         }
         .accessibilityLabel("\(album.name) album")
         .accessibilityAddTraits(isOn ? .isSelected : [])
-        .accessibilityHint("When selected, every photo you keep is added to this album")
+        .accessibilityHint("When selected, every photo you keep moves into this album")
     }
 
     private var addButton: some View {
@@ -85,7 +102,8 @@ struct AlbumRail: View {
     private func toggle(_ album: ShelfAlbum) {
         Haptics.tick(model.hapticsEnabled)
         withAnimation(reduceMotion ? .easeOut(duration: 0.15) : .spring(duration: 0.3, bounce: 0.35)) {
-            if selected.contains(album.id) { selected.remove(album.id) } else { selected.insert(album.id) }
+            // One album at a time: picking another switches to it.
+            selected = selected.contains(album.id) ? [] : [album.id]
             bubble = album.id
         }
         bubbleTask?.cancel()
@@ -94,6 +112,30 @@ struct AlbumRail: View {
             guard !Task.isCancelled else { return }
             withAnimation(.easeOut(duration: 0.3)) { bubble = nil }
         }
+    }
+}
+
+/// Reorders the rail live as a dragged emoji passes over another one.
+private struct RailDrop: DropDelegate {
+    let target: String
+    @Binding var dragging: String?
+    let model: AppModel
+    let reduceMotion: Bool
+
+    func dropEntered(info: DropInfo) {
+        guard let moving = dragging, moving != target,
+              let to = model.state.shelf.firstIndex(where: { $0.id == target }) else { return }
+        Haptics.tick(model.hapticsEnabled)
+        withAnimation(reduceMotion ? .easeOut(duration: 0.15) : .spring(duration: 0.3, bounce: 0.25)) {
+            model.moveShelf(moving, to: to)
+        }
+    }
+
+    func dropUpdated(info: DropInfo) -> DropProposal? { DropProposal(operation: .move) }
+
+    func performDrop(info: DropInfo) -> Bool {
+        dragging = nil
+        return true
     }
 }
 

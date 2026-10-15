@@ -108,3 +108,26 @@ import Testing
     #expect(Grouping.nextMonth(after: MonthKey(year: 2026, month: 8), in: months, state: state) == nil)
     #expect(Grouping.nextMonth(after: MonthKey(year: 2020, month: 1), in: months, state: state) == nil)
 }
+
+@Test func filingIntoOneAlbumTakesThePhotoOutOfTheOthers() {
+    let members: [String: Set<String>] = ["golf": ["p1"], "gf": ["p1"], "nice": []]
+    #expect(FilingLedger.otherAlbums(for: "p1", target: "nice", shelfOrder: ["golf", "gf", "nice"], members: members) == ["golf", "gf"])
+    #expect(FilingLedger.otherAlbums(for: "p1", target: "golf", shelfOrder: ["golf", "gf", "nice"], members: members) == ["gf"])
+    var ledger = FilingLedger()
+    ledger.record("p1", albums: ["nice"], movedOutOf: ["golf", "gf"])
+    #expect(ledger.takeBackMoves("p1") == ["golf", "gf"])
+    #expect(ledger.takeBackMoves("p1") == [])
+    #expect(ledger.takeBack("p1") == ["nice"])
+}
+
+@Test func railCanBeReordered() {
+    var state = ReviewState()
+    for id in ["a", "b", "c"] { state.addToShelf(ShelfAlbum(id: id, emoji: "⛳", name: id)) }
+    state.moveShelf("c", to: 0)
+    #expect(state.shelf.map(\.id) == ["c", "a", "b"])
+    state.moveShelf("c", to: 2)
+    #expect(state.shelf.map(\.id) == ["a", "b", "c"])
+    state.moveShelf("gone", to: 0)
+    state.moveShelf("a", to: 9)
+    #expect(state.shelf.map(\.id) == ["b", "c", "a"])
+}

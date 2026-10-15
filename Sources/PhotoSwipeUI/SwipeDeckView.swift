@@ -29,6 +29,7 @@ struct SwipeDeckView: View {
     @State private var showTrash = false
     @State private var showInfo = false
     @State private var sizes: [String: Int64] = [:]
+    /// At most one album: a photo lives in one emoji album at a time.
     @State private var selectedAlbums: Set<String> = []
     @State private var ledger = FilingLedger()
     @State private var editor: EditorTarget?
@@ -85,10 +86,13 @@ struct SwipeDeckView: View {
         .padding(.horizontal, 16)
         .padding(.bottom, 8)
         .background { Ambient(id: session.current).equatable() }
+        // Only the close button leaves. A stray swipe or pinch outside the photo must not
+        // zoom the screen back to the calendar and lose the place.
+        .interactiveDismissDisabled()
         .sheet(isPresented: $showTrash) { ReviewDeleteView() }
         .sheet(item: $editor) { target in
             AlbumEditor(editing: target.album) { newID in
-                withAnimation(.spring(duration: 0.3)) { _ = selectedAlbums.insert(newID) }
+                withAnimation(.spring(duration: 0.3)) { selectedAlbums = [newID] }
             }
         }
         .onChange(of: model.state.shelf.map(\.id)) { _, ids in
@@ -299,13 +303,17 @@ struct SwipeDeckView: View {
         guard let id = session.current, !isUndoing else { return }
         Haptics.tap(model.hapticsEnabled)
         var filed: [String] = []
-        if decision == .keep {
-            let members = Dictionary(uniqueKeysWithValues: selectedAlbums.map { ($0, Set(model.albumMembers[$0] ?? [])) })
-            filed = FilingLedger.newAlbums(for: id, selected: selectedAlbums,
-                                           shelfOrder: model.state.shelf.map(\.id), members: members)
+        var movedOut: [String] = []
+        if decision == .keep, let target = selectedAlbums.first {
+            let order = model.state.shelf.map(\.id)
+            let members = model.albumMembers.mapValues(Set.init)
+            filed = FilingLedger.newAlbums(for: id, selected: [target], shelfOrder: order, members: members)
+            // One photo, one emoji album: filing it here takes it out of any other on the rail.
+            movedOut = FilingLedger.otherAlbums(for: id, target: target, shelfOrder: order, members: members)
             model.file(id, into: filed)
+            model.unfile(id, from: movedOut)
         }
-        ledger.record(id, albums: filed)
+        ledger.record(id, albums: filed, movedOutOf: movedOut)
         let exit = Leaving(assetID: id, decision: decision, from: drag,
                            filing: decision == .keep ? filingEmojis : "")
         leaving.append(exit)
@@ -328,6 +336,7 @@ struct SwipeDeckView: View {
         let wasKept = model.state.decisions[session.ids[session.index - 1]] == .keep
         let photo = session.ids[session.index - 1]
         model.unfile(photo, from: ledger.takeBack(photo))
+        model.file(photo, into: ledger.takeBackMoves(photo))
         var instant = Transaction()
         instant.disablesAnimations = true
         withTransaction(instant) {
