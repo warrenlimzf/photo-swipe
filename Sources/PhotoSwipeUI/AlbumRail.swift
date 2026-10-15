@@ -20,17 +20,19 @@ struct AlbumRail: View {
 
     /// One emoji plus the gap after it.
     private let slot: CGFloat = 46 + 12
+    private let addID = "rail-add"
 
     var body: some View {
         // One row, centred while it fits, scrolling sideways once it doesn't.
         GeometryReader { geo in
+          ScrollViewReader { proxy in
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(spacing: 12) {
                     ForEach(Array(model.state.shelf.enumerated()), id: \.element.id) { index, album in
                         emojiButton(album, at: index)
                             .transition(reduceMotion ? .opacity : .scale(scale: 0.6).combined(with: .opacity))
                     }
-                    addButton
+                    addButton.id(addID)
                 }
                 .padding(.horizontal, 6)
                 .frame(minWidth: geo.size.width)
@@ -43,6 +45,12 @@ struct AlbumRail: View {
             // clips left and right only.
             .scrollClipDisabled()
             .mask { Rectangle().padding(.vertical, -80) }
+            // A new album lands at the end of the row: bring it and ＋ into view.
+            .onChange(of: model.state.shelf.count) { old, new in
+                guard new > old else { return }
+                withAnimation(reduceMotion ? nil : .easeOut(duration: 0.3)) { proxy.scrollTo(addID, anchor: .trailing) }
+            }
+          }
         }
         .frame(height: 54)
         .confirmationDialog(menuFor?.title ?? "", isPresented: Binding(get: { menuFor != nil }, set: { if !$0 { menuFor = nil } }),
@@ -80,7 +88,14 @@ struct AlbumRail: View {
             .offset(x: isLifted ? dragX : shift(for: index))
             .zIndex(isLifted ? 2 : (bubble == album.id ? 1 : 0))
             .onTapGesture { toggle(album) }
-            .gesture(reorderGesture(album, at: index))
+            // A UIKit long press, not SwiftUI's LongPress.sequenced(before: Drag): that one claimed
+            // every touch on an emoji, so the row could not scroll and ＋ sat off screen once the
+            // rail outgrew the width (v1.7.2). A quick drag now scrolls; a 0.22 s hold lifts.
+            .holdDrag(minimumDuration: 0.22,
+                      began: { lift(album, at: index) },
+                      changed: { move(album, by: $0) },
+                      ended: { drop(album, after: $0) },
+                      cancelled: { cancelLift(album) })
             .accessibilityElement()
             .accessibilityLabel("\(album.name) album")
             .accessibilityAddTraits(isOn ? [.isButton, .isSelected] : .isButton)
@@ -102,50 +117,53 @@ struct AlbumRail: View {
     }
 
     /// Hold to lift, drag to move, let go to drop. A hold with no drag opens Edit / Remove.
-    private func reorderGesture(_ album: ShelfAlbum, at index: Int) -> some Gesture {
-        LongPressGesture(minimumDuration: 0.22)
-            .sequenced(before: DragGesture(minimumDistance: 0, coordinateSpace: .global))
-            .onChanged { value in
-                guard case .second(true, let drag) = value else { return }
-                if lifted == nil {
-                    Haptics.tap(model.hapticsEnabled)
-                    liftedFrom = index
-                    landing = index
-                    withAnimation(.spring(duration: 0.22, bounce: 0.35)) { lifted = album.id }
-                }
-                let x = drag?.translation.width ?? 0
-                var still = Transaction()
-                still.disablesAnimations = true
-                withTransaction(still) { dragX = x }
-                let count = model.state.shelf.count
-                let spot = max(0, min(count - 1, liftedFrom + Int((x / slot).rounded())))
-                if spot != landing {
-                    Haptics.tick(model.hapticsEnabled)
-                    withAnimation(reduceMotion ? .easeOut(duration: 0.12) : .spring(duration: 0.26, bounce: 0.2)) { landing = spot }
-                }
+    private func lift(_ album: ShelfAlbum, at index: Int) {
+        Haptics.tap(model.hapticsEnabled)
+        liftedFrom = index
+        landing = index
+        withAnimation(.spring(duration: 0.22, bounce: 0.35)) { lifted = album.id }
+    }
+
+    private func move(_ album: ShelfAlbum, by x: CGFloat) {
+        guard lifted == album.id else { return }
+        var still = Transaction()
+        still.disablesAnimations = true
+        withTransaction(still) { dragX = x }
+        let count = model.state.shelf.count
+        let spot = max(0, min(count - 1, liftedFrom + Int((x / slot).rounded())))
+        if spot != landing {
+            Haptics.tick(model.hapticsEnabled)
+            withAnimation(reduceMotion ? .easeOut(duration: 0.12) : .spring(duration: 0.26, bounce: 0.2)) { landing = spot }
+        }
+    }
+
+    private func drop(_ album: ShelfAlbum, after x: CGFloat) {
+        guard lifted == album.id else { return }
+        if abs(x) < 8 {
+            withAnimation(.spring(duration: 0.22)) { lifted = nil; dragX = 0 }
+            menuFor = album
+            return
+        }
+        let from = liftedFrom, to = landing
+        // Settle into the gap, then commit the new order in one frame so nothing jumps.
+        withAnimation(.spring(duration: 0.26, bounce: 0.2)) {
+            dragX = CGFloat(to - from) * slot
+        } completion: {
+            var instant = Transaction()
+            instant.disablesAnimations = true
+            withTransaction(instant) {
+                model.moveShelf(album.id, to: to)
+                lifted = nil
+                dragX = 0
+                landing = 0
             }
-            .onEnded { value in
-                guard case .second(true, let drag) = value, lifted == album.id else { return }
-                if abs(drag?.translation.width ?? 0) < 8 {
-                    withAnimation(.spring(duration: 0.22)) { lifted = nil; dragX = 0 }
-                    menuFor = album
-                    return
-                }
-                let from = liftedFrom, to = landing
-                // Settle into the gap, then commit the new order in one frame so nothing jumps.
-                withAnimation(.spring(duration: 0.26, bounce: 0.2)) {
-                    dragX = CGFloat(to - from) * slot
-                } completion: {
-                    var instant = Transaction()
-                    instant.disablesAnimations = true
-                    withTransaction(instant) {
-                        model.moveShelf(album.id, to: to)
-                        lifted = nil
-                        dragX = 0
-                        landing = 0
-                    }
-                }
-            }
+        }
+    }
+
+    /// The system took the touch away mid-hold: put the emoji back where it was.
+    private func cancelLift(_ album: ShelfAlbum) {
+        guard lifted == album.id else { return }
+        withAnimation(.spring(duration: 0.22)) { lifted = nil; dragX = 0; landing = 0 }
     }
 
     private var addButton: some View {
@@ -193,3 +211,60 @@ private struct NameBubble: View {
             .fixedSize()
     }
 }
+
+#if os(iOS)
+import UIKit
+
+/// A long press that keeps reporting the finger's sideways travel until it lifts. Being a plain
+/// UILongPressGestureRecognizer, it fails as soon as the finger moves before the hold, which
+/// leaves the touch to the rail's scroll view.
+private struct HoldDrag: UIGestureRecognizerRepresentable {
+    let minimumDuration: Double
+    let began: () -> Void
+    let changed: (CGFloat) -> Void
+    let ended: (CGFloat) -> Void
+    let cancelled: () -> Void
+
+    final class Coordinator { var startX: CGFloat = 0 }
+
+    func makeCoordinator(converter: CoordinateSpaceConverter) -> Coordinator { Coordinator() }
+
+    func makeUIGestureRecognizer(context: Context) -> UILongPressGestureRecognizer {
+        let g = UILongPressGestureRecognizer()
+        g.minimumPressDuration = minimumDuration
+        return g
+    }
+
+    func handleUIGestureRecognizerAction(_ g: UILongPressGestureRecognizer, context: Context) {
+        let x = g.location(in: nil).x
+        switch g.state {
+        case .began:
+            context.coordinator.startX = x
+            began()
+        case .changed:
+            changed(x - context.coordinator.startX)
+        case .ended:
+            ended(x - context.coordinator.startX)
+        case .cancelled, .failed:
+            cancelled()
+        default:
+            break
+        }
+    }
+}
+
+private extension View {
+    func holdDrag(minimumDuration: Double, began: @escaping () -> Void, changed: @escaping (CGFloat) -> Void,
+                  ended: @escaping (CGFloat) -> Void, cancelled: @escaping () -> Void) -> some View {
+        gesture(HoldDrag(minimumDuration: minimumDuration, began: began, changed: changed, ended: ended, cancelled: cancelled))
+    }
+}
+#else
+// macOS only exists so `swift build` type-checks the screens.
+private extension View {
+    func holdDrag(minimumDuration: Double, began: @escaping () -> Void, changed: @escaping (CGFloat) -> Void,
+                  ended: @escaping (CGFloat) -> Void, cancelled: @escaping () -> Void) -> some View {
+        self
+    }
+}
+#endif

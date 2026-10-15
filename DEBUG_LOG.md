@@ -29,3 +29,9 @@
 - Cause: a wheel scrolls in ~100px notches and every ScrollTrigger used `scrub: true`, so each notch became a one-frame jump of every scrubbed layer. Measured with real wheel input in Chromium: storm photos jumped up to 114px in one frame, the hero layers up to 86px. A trackpad sends many small deltas, which hid it.
 - Fix: hero `scrub: 0.4`, storm `scrub: 0.5` (scroll stays native, only the animation glides between notches: pinned photos now max 36px/frame, avg 7px), dropped `anticipatePin`, `will-change` off `.btn` and `.storm .ph`, and the shot tilt ignores the pointermove a browser fires after a scroll with the cursor still.
 - Don't retry: Lenis or any smooth-scroll layer (Warren wants native scroll), or `pinType: "transform"` (it would make the pinned scene itself step with each notch).
+
+## 2026-10-15 — album rail would not scroll, ＋ out of reach (v1.7.2)
+- Seen: with about seven or more emoji albums, the rail under the photo would not scroll, so the ＋ (new album) sat off screen on the right.
+- Cause: the rail already was a horizontal ScrollView, but every emoji carried SwiftUI's `LongPressGesture.sequenced(before: DragGesture(minimumDistance: 0))` for hold-to-reorder. That gesture claimed any touch that started on an emoji (also as `simultaneousGesture`), and emojis cover almost the whole row. Proven on a sim: removing it made the row scroll; the tap gesture alone does not block.
+- Fix: the hold-drag is now a `UILongPressGestureRecognizer` via `UIGestureRecognizerRepresentable` (`HoldDrag` in `AlbumRail.swift`): moving before 0.22 s fails it and the ScrollView scrolls; a hold lifts as before. It also reports `.cancelled`, so a lifted emoji drops back instead of sticking. Adding an album scrolls the row to ＋. Commit: see `git log --grep "rail scrolls"`.
+- Don't retry: `.simultaneousGesture` with the sequenced SwiftUI gesture (still blocks scroll on iOS 27), or pinning ＋ outside the ScrollView (changes the look).
