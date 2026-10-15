@@ -1,5 +1,11 @@
 # Debug log
 
+## 2026-10-15 — dark clock on the orange hero (v1.6.0)
+- Seen: after the Foodie restyle the status bar clock was black on the orange hero.
+- Cause: the app forced `.preferredColorScheme(.light)`, which gives dark status bar text. iOS 27 also ignored `UIViewControllerBasedStatusBarAppearance = NO` for the full-screen swipe cover.
+- Fix: root asks for `.preferredColorScheme(.dark)` while forcing `.environment(\.colorScheme, .light)` on the views; the swipe cover uses `statusBarHidden`; `StatusScrim` fades an orange strip behind the clock once the hero scrolls away.
+- Don't retry: Info.plist status bar keys (global style), or a see-through nav bar on Library (its scroll-edge blur greys the hero).
+
 ## 2026-10-15 — stray swipe threw you out of a month (v1.4.0)
 - Seen: a swipe or pinch outside the photo zoomed the swipe screen back to the calendar, losing the place.
 - Cause: the deck is a `fullScreenCover` with `navigationTransition(.zoom)`, which gives iOS's interactive zoom-dismiss gesture for free.

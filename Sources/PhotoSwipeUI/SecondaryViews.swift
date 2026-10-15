@@ -11,38 +11,40 @@ struct ReviewDeleteView: View {
     var body: some View {
         let ids = model.state.pendingDeletes
         NavigationStack {
-            ScrollView {
+            HeroScreen(title: "To delete", subtitle: size.map { $0 > 0 ? byteFormatter.string(fromByteCount: $0) : " " } ?? " ") {
                 if ids.isEmpty {
-                    ContentUnavailableView("Nothing to delete", systemImage: "checkmark.circle",
-                                           description: Text("Photos you swipe left will wait here."))
-                        .padding(.top, 60)
+                    ContentUnavailableView("Nothing to delete", systemImage: "checkmark.circle.fill")
+                        .foregroundStyle(Theme.keep, Theme.ink)
+                        .padding(.top, 40)
                 } else {
-                    Text("Tap any photo to keep it.")
-                        .font(.subheadline)
-                        .foregroundStyle(Theme.muted)
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                        .padding(.horizontal, 16)
-                        .padding(.bottom, 8)
-                    LazyVGrid(columns: thumbColumns, spacing: 2) {
-                        ForEach(ids, id: \.self) { id in
-                            Button {
-                                Haptics.tick(model.hapticsEnabled)
-                                withAnimation(.spring(duration: 0.35)) {
-                                    model.apply { $0.decide(id, .keep, day: model.today) }
+                    VStack(alignment: .leading, spacing: 12) {
+                        Label("Tap to keep", systemImage: "hand.tap.fill")
+                            .font(.system(.subheadline, design: .rounded, weight: .semibold))
+                            .foregroundStyle(Theme.b700)
+                            .padding(.horizontal, 12)
+                            .frame(height: 32)
+                            .background(Theme.b100, in: Capsule())
+                        LazyVGrid(columns: thumbColumns, spacing: 4) {
+                            ForEach(ids, id: \.self) { id in
+                                Button {
+                                    Haptics.tick(model.hapticsEnabled)
+                                    withAnimation(.spring(duration: 0.35)) {
+                                        model.apply { $0.decide(id, .keep, day: model.today) }
+                                    }
+                                } label: {
+                                    Thumb(id: id)
                                 }
-                            } label: {
-                                Thumb(id: id)
+                                .buttonStyle(PressStyle(haptic: false))
+                                .transition(.scale(scale: 0.8).combined(with: .opacity))
                             }
-                            .buttonStyle(PressStyle())
-                            .transition(.scale(scale: 0.8).combined(with: .opacity))
                         }
                     }
+                    .padding(.horizontal, 16)
                 }
             }
-            .background(Theme.canvas.ignoresSafeArea())
             .safeAreaInset(edge: .bottom) {
                 VStack(spacing: 8) {
-                    Button {
+                    Pill(title: deleteTitle(ids.count), icon: "trash.fill", kind: .delete, busy: isDeleting) {
                         Task {
                             isDeleting = true
                             let deleted = await model.commitDeletes(ids)
@@ -52,34 +54,22 @@ struct ReviewDeleteView: View {
                                 dismiss()
                             }
                         }
-                    } label: {
-                        HStack(spacing: 10) {
-                            if isDeleting { ProgressView().tint(Theme.canvas) }
-                            Text(deleteTitle(ids.count))
-                                .monospacedDigit()
-                                .contentTransition(.numericText())
-                        }
-                        .font(.headline)
-                        .foregroundStyle(Theme.canvas)
-                        .frame(maxWidth: .infinity)
-                        .padding(.vertical, 17)
-                        .background(Theme.delete, in: Capsule())
                     }
-                    .buttonStyle(PressStyle())
-                    .disabled(ids.isEmpty || isDeleting)
+                    .disabled(ids.isEmpty)
                     .opacity(ids.isEmpty ? 0.4 : 1)
                     .animation(.snappy, value: ids.count)
-                    Text("They'll sit in Recently Deleted for 30 days.")
+                    Text("Recently Deleted keeps them 30 days")
                         .font(.caption)
-                        .foregroundStyle(Theme.muted)
+                        .foregroundStyle(Theme.dim)
                 }
-                .padding(.horizontal, 16)
-                .padding(.top, 12)
+                .padding(.horizontal, 20)
+                .padding(.top, 24)
                 .padding(.bottom, 8)
-                .background(.bar)
+                .background {
+                    LinearGradient(colors: [Theme.page.opacity(0), Theme.page], startPoint: .top, endPoint: .init(x: 0.5, y: 0.35))
+                        .ignoresSafeArea()
+                }
             }
-            .navigationTitle("To delete")
-            .inlineTitle()
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) { Button("Close") { dismiss() } }
             }
@@ -88,9 +78,7 @@ struct ReviewDeleteView: View {
     }
 
     private func deleteTitle(_ count: Int) -> String {
-        let noun = count == 1 ? "photo" : "photos"
-        guard let size, size > 0 else { return "Delete \(count) \(noun)" }
-        return "Delete \(count) \(noun) · \(byteFormatter.string(fromByteCount: size))"
+        "Delete \(count) \(count == 1 ? "photo" : "photos")"
     }
 }
 
@@ -100,13 +88,25 @@ struct BookmarksView: View {
 
     var body: some View {
         let ids = model.bookmarkIDs
-        ScrollView {
+        HeroScreen(title: "Bookmarks", subtitle: ids.isEmpty ? nil : "\(ids.count)") {
+            if !ids.isEmpty {
+                Button { deck = Deck(title: "Bookmarks", ids: ids) } label: {
+                    Label("Swipe", systemImage: "hand.draw.fill")
+                        .font(.system(.subheadline, design: .rounded, weight: .bold))
+                        .foregroundStyle(Theme.b700)
+                        .padding(.horizontal, 16)
+                        .frame(height: 40)
+                        .background(.white, in: Capsule())
+                }
+                .buttonStyle(PressStyle())
+            }
+        } content: {
             if ids.isEmpty {
-                ContentUnavailableView("Nothing bookmarked", systemImage: "bookmark",
-                                       description: Text("Bookmark a photo while swiping if you can't decide yet."))
-                    .padding(.top, 60)
+                ContentUnavailableView("Nothing bookmarked", systemImage: "bookmark")
+                    .foregroundStyle(Theme.dim, Theme.ink)
+                    .padding(.top, 40)
             } else {
-                LazyVGrid(columns: thumbColumns, spacing: 2) {
+                LazyVGrid(columns: thumbColumns, spacing: 4) {
                     ForEach(ids, id: \.self) { id in
                         Thumb(id: id)
                             .contextMenu {
@@ -119,14 +119,7 @@ struct BookmarksView: View {
                             .transition(.scale(scale: 0.8).combined(with: .opacity))
                     }
                 }
-            }
-        }
-        .background(Theme.canvas.ignoresSafeArea())
-        .navigationTitle("Bookmarks")
-        .toolbar {
-            ToolbarItem(placement: .primaryAction) {
-                Button("Swipe") { deck = Deck(title: "Bookmarks", ids: ids) }
-                    .disabled(ids.isEmpty)
+                .padding(.horizontal, 16)
             }
         }
         .cover(item: $deck) { deck in
@@ -135,65 +128,110 @@ struct BookmarksView: View {
     }
 }
 
-/// Plain figures in a native list. One big number, then rows.
+/// The big percentage lives in the hero; figures sit in white cards below.
 struct StatsView: View {
     @Environment(AppModel.self) private var model
 
     var body: some View {
         let total = model.library.assets.count
         let fraction = model.reviewedFraction
-        List {
-            Section {
-                VStack(alignment: .leading, spacing: 10) {
-                    Text("\(Int((fraction * 100).rounded()))%")
-                        .font(.numeral(72))
-                        .foregroundStyle(Theme.ink)
-                    Text("of your library reviewed")
-                        .font(.body)
-                        .foregroundStyle(Theme.muted)
-                    ProgressLine(value: fraction).padding(.top, 6)
+        HeroScreen(title: "Stats") {
+            VStack(alignment: .trailing, spacing: 0) {
+                Text("\(Int((fraction * 100).rounded()))%")
+                    .font(.numeral(40))
+                    .foregroundStyle(.white)
+                    .contentTransition(.numericText())
+                Text("reviewed")
+                    .font(.system(.subheadline, design: .rounded, weight: .semibold))
+                    .foregroundStyle(.white.opacity(0.8))
+            }
+        } content: {
+            VStack(spacing: 16) {
+                ProgressLine(value: fraction, height: 10, track: Theme.b100)
+                    .padding(.horizontal, 8)
+                HStack(spacing: 12) {
+                    figure(formatBytes(model.state.bytesFreed), "freed", "sparkles", tint: Theme.b500)
+                    figure("\(model.streak)", "day streak", "flame.fill", tint: Theme.b700)
                 }
-                .listRowBackground(Color.clear)
-                .listRowInsets(EdgeInsets(top: 0, leading: 4, bottom: 8, trailing: 4))
-            }
-            Section {
-                row("Space freed", formatBytes(model.state.bytesFreed))
-                row("Deleted", "\(model.state.deletedCount)")
-                row("Kept", "\(model.state.keptCount)")
-                row("Waiting to be deleted", "\(model.state.pendingDeletes.count)")
-                row("Bookmarked", "\(model.state.bookmarks.count)")
-                row("Photos in library", "\(total)")
-            }
-            Section("This week") {
-                HStack {
-                    ForEach(Array(model.lastWeek.enumerated()), id: \.offset) { _, day in
-                        VStack(spacing: 8) {
-                            Circle()
-                                .fill(day.active ? Theme.accent : Theme.hairline)
-                                .frame(width: 28, height: 28)
-                            Text(day.label)
-                                .font(.caption2)
-                                .foregroundStyle(Theme.muted)
-                        }
-                        .frame(maxWidth: .infinity)
-                    }
+                week
+                VStack(spacing: 0) {
+                    row("Deleted", "\(model.state.deletedCount)", "trash.fill", Theme.delete)
+                    divider
+                    row("Kept", "\(model.state.keptCount)", "checkmark", Theme.keep)
+                    divider
+                    row("To delete", "\(model.state.pendingDeletes.count)", "clock.fill", Theme.b500)
+                    divider
+                    row("Bookmarked", "\(model.state.bookmarks.count)", "bookmark.fill", Theme.b500)
+                    divider
+                    row("In library", "\(total)", "photo.on.rectangle", Theme.muted)
+                    divider
+                    row("Days swiped", "\(model.state.activeDays.count)", "calendar", Theme.muted)
                 }
                 .padding(.vertical, 6)
-                row("Current streak", model.streak == 1 ? "1 day" : "\(model.streak) days")
-                row("Days swiped", "\(model.state.activeDays.count)")
+                .card(26)
             }
+            .padding(.horizontal, 16)
         }
-        .navigationTitle("Stats")
     }
 
-    private func row(_ label: String, _ value: String) -> some View {
-        HStack {
-            Text(label)
-            Spacer()
-            Text(value)
-                .monospacedDigit()
-                .foregroundStyle(Theme.muted)
+    private var divider: some View {
+        Rectangle().fill(Theme.hairline).frame(height: 1).padding(.leading, 66)
+    }
+
+    private func figure(_ value: String, _ label: String, _ icon: String, tint: Color) -> some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Image(systemName: icon)
+                .font(.system(size: 17, weight: .semibold))
+                .foregroundStyle(tint)
+                .frame(width: 40, height: 40)
+                .background(Theme.b100, in: RoundedRectangle(cornerRadius: 13, style: .continuous))
+            VStack(alignment: .leading, spacing: 0) {
+                Text(value).font(.numeral(24)).foregroundStyle(Theme.ink).lineLimit(1).minimumScaleFactor(0.6)
+                Text(label).font(.subheadline).foregroundStyle(Theme.dim)
+            }
         }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(16)
+        .card(26)
+    }
+
+    /// Seven dots, filled orange on the days with a swipe.
+    private var week: some View {
+        HStack {
+            ForEach(Array(model.lastWeek.enumerated()), id: \.offset) { _, day in
+                VStack(spacing: 8) {
+                    ZStack {
+                        Circle().fill(day.active ? AnyShapeStyle(Theme.cta) : AnyShapeStyle(Theme.fill))
+                        if day.active {
+                            Image(systemName: "checkmark").font(.caption.weight(.heavy)).foregroundStyle(.white)
+                        }
+                    }
+                    .frame(width: 32, height: 32)
+                    Text(day.label)
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(Theme.dim)
+                }
+                .frame(maxWidth: .infinity)
+            }
+        }
+        .padding(.vertical, 16)
+        .padding(.horizontal, 8)
+        .card(26)
+    }
+
+    private func row(_ label: String, _ value: String, _ icon: String, _ tint: Color) -> some View {
+        HStack(spacing: 14) {
+            Image(systemName: icon)
+                .font(.system(size: 15, weight: .semibold))
+                .foregroundStyle(tint)
+                .frame(width: 36, height: 36)
+                .background(tint.opacity(0.12), in: RoundedRectangle(cornerRadius: 11, style: .continuous))
+            Text(label).font(.body).foregroundStyle(Theme.ink)
+            Spacer()
+            Text(value).font(.numeral(17, weight: .semibold)).foregroundStyle(Theme.ink)
+        }
+        .padding(.horizontal, 16)
+        .padding(.vertical, 9)
     }
 }
 
@@ -203,25 +241,70 @@ struct SettingsView: View {
 
     var body: some View {
         @Bindable var model = model
-        Form {
-            Section {
-                Toggle("Haptics", isOn: $model.hapticsEnabled)
-                Button("Photo access") { openSystemSettings() }
+        HeroScreen(title: "Settings") {
+            VStack(spacing: 16) {
+                VStack(spacing: 0) {
+                    HStack(spacing: 14) {
+                        icon("iphone.radiowaves.left.and.right", Theme.b500)
+                        Toggle("Haptics", isOn: $model.hapticsEnabled)
+                            .tint(Theme.b500)
+                            .sensoryFeedback(.selection, trigger: model.hapticsEnabled)
+                    }
+                    .padding(.horizontal, 16)
+                    .padding(.vertical, 10)
+                    Rectangle().fill(Theme.hairline).frame(height: 1).padding(.leading, 66)
+                    Button { openSystemSettings() } label: {
+                        HStack(spacing: 14) {
+                            icon("photo.on.rectangle", Theme.b500)
+                            Text("Photo access").foregroundStyle(Theme.ink)
+                            Spacer()
+                            Image(systemName: "arrow.up.right").font(.footnote.weight(.bold)).foregroundStyle(Theme.dim)
+                        }
+                        .padding(.horizontal, 16)
+                        .padding(.vertical, 10)
+                        .contentShape(Rectangle())
+                    }
+                    .buttonStyle(PressStyle())
+                }
+                .padding(.vertical, 6)
+                .card(26)
+
+                Button { confirmReset = true } label: {
+                    HStack(spacing: 14) {
+                        icon("arrow.counterclockwise", Theme.delete)
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text("Reset progress").foregroundStyle(Theme.delete)
+                            Text("Photos and albums stay").font(.footnote).foregroundStyle(Theme.dim)
+                        }
+                        Spacer()
+                    }
+                    .padding(16)
+                    .card(26)
+                }
+                .buttonStyle(PressStyle())
+
+                Label("Photos never leave this phone", systemImage: "lock.fill")
+                    .font(.system(.footnote, design: .rounded, weight: .semibold))
+                    .foregroundStyle(Theme.dim)
+                    .padding(.top, 8)
             }
-            Section {
-                Button("Reset all progress", role: .destructive) { confirmReset = true }
-            } footer: {
-                Text("Clears your decisions, bookmarks and stats. Your photos are not touched.")
-            }
-            Section {
-                Label("Your photos stay on this phone. No account, no ads, no tracking.", systemImage: "lock")
-                    .font(.subheadline)
-                    .foregroundStyle(Theme.muted)
-            }
+            .padding(.horizontal, 16)
         }
-        .navigationTitle("Settings")
         .confirmationDialog("Reset all progress?", isPresented: $confirmReset, titleVisibility: .visible) {
-            Button("Reset", role: .destructive) { model.resetProgress() }
+            Button("Reset", role: .destructive) {
+                Haptics.warning(model.hapticsEnabled)
+                model.resetProgress()
+            }
+        } message: {
+            Text("Clears decisions, bookmarks and stats. Your photos are not touched.")
         }
+    }
+
+    private func icon(_ name: String, _ tint: Color) -> some View {
+        Image(systemName: name)
+            .font(.system(size: 15, weight: .semibold))
+            .foregroundStyle(tint)
+            .frame(width: 36, height: 36)
+            .background(tint.opacity(0.12), in: RoundedRectangle(cornerRadius: 11, style: .continuous))
     }
 }

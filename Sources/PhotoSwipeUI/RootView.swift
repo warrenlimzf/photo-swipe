@@ -23,7 +23,10 @@ public struct RootView: View {
             }
         }
         .environment(model)
-        .tint(Theme.ink)
+        .tint(Theme.b500)
+        // Every screen starts on the orange hero, so the window asks for dark (white clock) while
+        // the views themselves draw light.
+        .environment(\.colorScheme, .light)
         .preferredColorScheme(.dark)
         .task(id: model.library.access) { await model.reload() }
         .task {
@@ -43,62 +46,89 @@ public struct RootView: View {
     }
 }
 
-/// Launch: the three prints fan out over black.
+/// Launch: the prints slide in from the left on the brand colour, the wordmark fades in under them.
 private struct SplashView: View {
-    @State private var fanned = false
+    @State private var shown = false
 
     var body: some View {
-        CardFan(spread: fanned ? 1 : 0, size: 120)
-            .frame(maxWidth: .infinity, maxHeight: .infinity)
-            .background(Theme.canvas.ignoresSafeArea())
-            .onAppear {
-                withAnimation(.spring(duration: 0.6, bounce: 0.25)) { fanned = true }
-            }
+        VStack(spacing: 18) {
+            PrintStack(size: 190, animated: false, spread: shown ? 1 : 0)
+                .offset(x: shown ? 0 : -260)
+                .rotationEffect(.degrees(shown ? 0 : -12))
+            Wordmark(size: 30)
+                .opacity(shown ? 1 : 0)
+                .offset(y: shown ? 0 : 10)
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .background(Theme.hero.ignoresSafeArea())
+        .onAppear {
+            withAnimation(.spring(duration: 0.65, bounce: 0.3)) { shown = true }
+        }
     }
 }
 
+/// First run, shaped like Foodie's login: the brand block with the drawing on top, a white
+/// sheet with one heading, three short lines and the one button.
 struct PermissionView: View {
     let ready: Bool
     @Environment(AppModel.self) private var model
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 0) {
-            Spacer()
-            CardFan(spread: ready ? 1 : 0, size: 96)
-                .animation(.spring(duration: 0.6, bounce: 0.25).delay(0.1), value: ready)
-                .padding(.bottom, 36)
-            Text("Tidy your camera roll.")
-                .font(.largeTitle.bold())
-                .foregroundStyle(Theme.ink)
-                .fixedSize(horizontal: false, vertical: true)
-                .rise(ready, order: 1)
-            VStack(alignment: .leading, spacing: 18) {
-                FeatureRow(icon: "hand.draw", text: "Right to keep, left to delete").rise(ready, order: 2)
-                FeatureRow(icon: "checkmark.shield", text: "Nothing goes until you confirm").rise(ready, order: 3)
-                FeatureRow(icon: "lock", text: "Your photos stay on this phone").rise(ready, order: 4)
-            }
-            .padding(.top, 28)
-            Spacer()
-            Group {
-                if model.library.access == .denied {
-                    VStack(alignment: .leading, spacing: 12) {
-                        Text("Photo access is off. Turn it on in Settings.")
-                            .font(.subheadline)
-                            .foregroundStyle(Theme.muted)
-                        PrimaryButton(title: "Open Settings") { openSystemSettings() }
+        GeometryReader { geo in
+            VStack(spacing: 0) {
+                ZStack(alignment: .bottomLeading) {
+                    HeroShape(radius: 44)
+                    HStack(alignment: .bottom) {
+                        VStack(alignment: .leading, spacing: 8) {
+                            Wordmark(size: 30)
+                            Text("Swipe your camera roll clean.")
+                                .font(.system(.title3, design: .rounded, weight: .semibold))
+                                .foregroundStyle(.white.opacity(0.85))
+                                .fixedSize(horizontal: false, vertical: true)
+                        }
+                        .rise(ready, order: 1)
+                        Spacer(minLength: 0)
                     }
-                } else {
-                    PrimaryButton(title: "Allow photo access") {
-                        Task { await model.library.requestAccess() }
-                    }
+                    .padding(.horizontal, 24)
+                    .padding(.bottom, 30)
+                    PrintStack(size: 210, spread: ready ? 1 : 0)
+                        .animation(.spring(duration: 0.7, bounce: 0.3).delay(0.1), value: ready)
+                        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topTrailing)
+                        .padding(.top, geo.safeAreaInsets.top + 24)
+                        .padding(.trailing, 14)
                 }
+                .frame(height: geo.safeAreaInsets.top + geo.size.height * 0.48)
+                .offset(y: ready ? 0 : -40)
+                .animation(.spring(duration: 0.6, bounce: 0.2), value: ready)
+
+                VStack(alignment: .leading, spacing: 18) {
+                    FeatureRow(icon: "hand.draw.fill", text: "Right keeps, left deletes").rise(ready, order: 2)
+                    FeatureRow(icon: "checkmark.shield.fill", text: "Nothing goes until you confirm").rise(ready, order: 3)
+                    FeatureRow(icon: "lock.fill", text: "Photos stay on this phone").rise(ready, order: 4)
+                    Spacer(minLength: 0)
+                    Group {
+                        if model.library.access == .denied {
+                            VStack(spacing: 12) {
+                                Text("Photo access is off.")
+                                    .font(.subheadline)
+                                    .foregroundStyle(Theme.muted)
+                                Pill(title: "Open Settings", icon: "gearshape.fill") { openSystemSettings() }
+                            }
+                        } else {
+                            Pill(title: "Allow photos", icon: "photo.on.rectangle.angled") {
+                                Task { await model.library.requestAccess() }
+                            }
+                        }
+                    }
+                    .rise(ready, order: 5)
+                }
+                .padding(.horizontal, 24)
+                .padding(.top, 34)
+                .padding(.bottom, geo.safeAreaInsets.bottom + 12)
             }
-            .rise(ready, order: 5)
+            .ignoresSafeArea()
         }
-        .padding(.horizontal, 24)
-        .padding(.bottom, 16)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .background(Theme.canvas.ignoresSafeArea())
+        .background(Theme.page.ignoresSafeArea())
     }
 }
 
@@ -109,32 +139,14 @@ private struct FeatureRow: View {
     var body: some View {
         HStack(spacing: 16) {
             Image(systemName: icon)
-                .font(.title3)
-                .foregroundStyle(Theme.ink)
-                .frame(width: 28)
+                .font(.system(size: 18, weight: .semibold))
+                .foregroundStyle(Theme.b500)
+                .frame(width: 48, height: 48)
+                .background(Theme.b100, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
             Text(text)
-                .font(.body)
-                .foregroundStyle(Theme.muted)
+                .font(.system(.body, design: .rounded, weight: .semibold))
+                .foregroundStyle(Theme.ink)
         }
-    }
-}
-
-/// The one primary action on a screen: a full-width pill. White by default.
-struct PrimaryButton: View {
-    let title: String
-    var color: Color?
-    let action: () -> Void
-
-    var body: some View {
-        Button(action: action) {
-            Text(title)
-                .font(.headline)
-                .foregroundStyle(Theme.canvas)
-                .frame(maxWidth: .infinity)
-                .padding(.vertical, 17)
-                .background(color ?? Theme.ink, in: Capsule())
-        }
-        .buttonStyle(PressStyle())
     }
 }
 
@@ -151,7 +163,7 @@ struct AssetImage: View {
     var body: some View {
         let shown = image ?? model.library.cachedImage(for: id, side: side)
         ZStack {
-            if placeholder { Theme.card }
+            if placeholder { Theme.fill }
             if let image = shown {
                 Image(platform: image)
                     .resizable()
@@ -177,13 +189,15 @@ struct Tile: View {
     }
 }
 
-/// Square thumbnail for grids, edge to edge like the Photos app.
+/// Square thumbnail for grids, softly rounded.
 struct Thumb: View {
     let id: String
 
     var body: some View {
-        Tile(id: id, side: 300).aspectRatio(1, contentMode: .fit)
+        Tile(id: id, side: 300)
+            .aspectRatio(1, contentMode: .fit)
+            .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
     }
 }
 
-let thumbColumns = Array(repeating: GridItem(.flexible(), spacing: 2), count: 3)
+let thumbColumns = Array(repeating: GridItem(.flexible(), spacing: 4), count: 3)

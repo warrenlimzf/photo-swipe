@@ -1,4 +1,4 @@
-# Session handoff — v1.4.0 to v1.5.0: one-album filing, smooth rail reorder, Library reshuffle (15 Oct 2026)
+# Session handoff — v1.6.0: Foodie restyle in tangerine (15 Oct 2026)
 
 > Persistent resume file. Paste into a fresh session (or auto-load via a SessionStart hook).
 > Delta only — project overview, layout, invariants and commands live in CLAUDE.md (auto-loaded).
@@ -6,15 +6,14 @@
 **Role:** Warren reviews on his iPhone; Claude builds, releases (GitHub Release per version) and installs with `./install-local.sh`.
 
 ## Status — updated 2026-10-15
-- Shipped and installed on his iPhone (Wi-Fi): v1.4.0, v1.4.1, v1.5.0. Version lines are in CLAUDE.md; bug notes in `DEBUG_LOG.md` (new file).
-- v1.4.0: rail single-select; filing into one album unfiles it from other rail albums (`FilingLedger.otherAlbums`, `takeBackMoves` for undo); `ReviewState.moveShelf`; `.interactiveDismissDisabled()` on `SwipeDeckView`.
-- v1.4.1: rail reorder rebuilt as a custom long-press (0.22s) + drag gesture in `AlbumRail.swift` (system onDrag felt laggy, left a ghost). Edit / Remove moved to "hold without moving" → confirmationDialog.
-- v1.5.0: Library order is Albums → to-delete row → months; Freed/Reviewed/Streak summary removed from Library (still in Stats); `DoneStamp` big green tick over finished months' mosaic; progress bars 6pt (months) / 5pt (deck).
-- Warren: "you did exactly what I've said". Not yet confirmed: how the v1.4.1 drag feels on his phone.
-- Install restarted the 7-day signing clock: next renewal ~22 Oct.
+- v1.6.0: whole app restyled from the black Gallery look to the Foodie standard. Warren picked **Tangerine** from three simulator directions (Grape / Tangerine / Berry). New icon (`tools/make_icon.py`), README screenshots refreshed. Logic untouched; 24 tests pass.
+- New shared pieces in `Brand.swift`: `PrintStack` (self-swiping drawing), `HeroShape`, `CompactHero`, `HeroScreen` (pushed screens keep the system back button and edge swipe), `StatusScrim`, `Pill`, `Wordmark`. `PressStyle` buzzes on every press.
+- Status bar fix and what not to retry: `DEBUG_LOG.md`.
+- Verified in the simulator (iPhone 18 Pro, iOS 27, real photo set): Library, swipe + drag stamp, finish screen, review grid + Apple's delete prompt (answered Don't Allow), album + select mode, Bookmarks, Stats, Settings, edge-swipe back. Not seen in the simulator: the permission screen (access already granted), the album editor sheet.
 
 ## Next actions
-1. Wait for Warren's notes. Likely tuning: drag lift timing / bounce, DoneStamp size or veil opacity (0.28).
+1. Wait for Warren's notes on v1.6.0 from his phone.
+2. Landing page warrenlimzf.com/photo-swipe still shows the old black screens; it needs new shots and probably the tangerine colour (ask first).
 
 ## Running state
 - Background processes: none
@@ -32,4 +31,4 @@
 - Older items still open: Albums screenshot on the landing page shows his "Girlfriend" album (swap offered); landing page screenshots now predate v1.5.0 Library layout; deferred album review minors (see git history of this file, 14 Oct); undo on a re-reviewed month clears instead of restoring.
 
 ## Pick up here
-Ask Warren how v1.5.0 feels on his phone, especially the hold-and-drag on the emoji rail.
+Ask Warren how the tangerine v1.6.0 feels on his phone (look, haptics, the drawing on Library).

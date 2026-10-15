@@ -35,25 +35,52 @@ struct AlbumEditor: View {
 
     var body: some View {
         NavigationStack {
-            VStack(spacing: 22) {
+            VStack(spacing: 20) {
                 EmojiField(text: $emojiText, focusOnAppear: editing == nil)
-                    .frame(width: 104, height: 104)
-                    .background(Theme.card, in: Circle())
-                    .overlay { Circle().strokeBorder(Theme.hairline) }
-                Text(emoji == nil ? "Tap the circle, pick an emoji" : "Emoji").eyebrow()
-                TextField("Name, e.g. Trips", text: $nameText)
-                    .font(.title3.weight(.semibold))
-                    .multilineTextAlignment(.center)
-                    .foregroundStyle(Theme.ink)
-                    .submitLabel(.done)
-                    .onSubmit(save)
-                    .padding(.vertical, 12)
-                    .overlay(alignment: .bottom) { Rectangle().fill(Theme.hairline).frame(height: 1) }
-                    .padding(.horizontal, 32)
+                    .frame(width: 112, height: 112)
+                    .background(emoji == nil ? AnyShapeStyle(Theme.b100) : AnyShapeStyle(Color.white), in: Circle())
+                    .overlay {
+                        if emoji == nil {
+                            Circle().strokeBorder(Theme.b500.opacity(0.5), style: StrokeStyle(lineWidth: 2, dash: [6, 5]))
+                                .allowsHitTesting(false)
+                        }
+                    }
+                    .shadow(color: Theme.ink.opacity(emoji == nil ? 0 : 0.1), radius: 14, y: 6)
+                    .scaleEffect(emoji == nil ? 1 : 1.04)
+                    .animation(.spring(duration: 0.35, bounce: 0.45), value: emoji)
+                    .sensoryFeedback(.selection, trigger: emoji)
+                // Foodie's input: a soft grey pill, and a round arrow that appears inside it once it can save.
+                HStack(spacing: 10) {
+                    Image(systemName: "character.cursor.ibeam").foregroundStyle(Theme.dim)
+                    TextField("Name", text: $nameText)
+                        .font(.system(.title3, design: .rounded, weight: .semibold))
+                        .foregroundStyle(Theme.ink)
+                        .submitLabel(.done)
+                        .onSubmit(save)
+                    if emoji != nil && name != nil {
+                        Button(action: save) {
+                            Group {
+                                if isSaving { ProgressView().tint(.white) } else { Image(systemName: "arrow.right").font(.headline.weight(.bold)) }
+                            }
+                            .foregroundStyle(.white)
+                            .frame(width: 44, height: 44)
+                            .background(Theme.cta, in: Circle())
+                            .shadow(color: Theme.b500.opacity(0.4), radius: 8, y: 4)
+                        }
+                        .buttonStyle(PressStyle())
+                        .transition(.scale(scale: 0.4).combined(with: .opacity))
+                        .accessibilityLabel(editing == nil ? "Create" : "Save")
+                    }
+                }
+                .padding(.leading, 20)
+                .padding(.trailing, 6)
+                .frame(height: 56)
+                .background(Theme.fill, in: Capsule())
+                .padding(.horizontal, 8)
                 if let emoji, let name {
-                    Text("Album in Photos: \(emoji) \(name)")
-                        .font(.footnote)
-                        .foregroundStyle(Theme.muted)
+                    Text("\(emoji) \(name) in Photos")
+                        .font(.footnote.weight(.medium))
+                        .foregroundStyle(Theme.dim)
                         .transition(.opacity)
                 }
                 if let error {
@@ -64,8 +91,8 @@ struct AlbumEditor: View {
             .padding(.top, 24)
             .padding(.horizontal, 16)
             .frame(maxWidth: .infinity)
-            .animation(.easeOut(duration: 0.2), value: emoji != nil && name != nil)
-            .background(Theme.canvas.ignoresSafeArea())
+            .animation(.spring(duration: 0.35, bounce: 0.3), value: emoji != nil && name != nil)
+            .background(Theme.page.ignoresSafeArea())
             .navigationTitle(editing == nil ? "New album" : "Edit album")
             .inlineTitle()
             .toolbar {
@@ -97,6 +124,7 @@ struct AlbumEditor: View {
                 Haptics.success(model.hapticsEnabled)
                 dismiss()
             } catch {
+                Haptics.warning(model.hapticsEnabled)
                 self.error = "Photos didn't allow that. Give Photo Swipe full photo access in Settings."
                 isSaving = false
             }

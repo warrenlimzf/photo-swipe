@@ -13,8 +13,8 @@
 [![Case study](https://img.shields.io/badge/case%20study-warrenlimzf.com-3FB950)](https://www.warrenlimzf.com/photo-swipe/)
 
 <p align="center">
-  <img src="docs/screenshots/library.jpg" width="23%" alt="Library, month by month">
-  <img src="docs/screenshots/months.jpg" width="23%" alt="A month shown as a mosaic of its photos">
+  <img src="docs/screenshots/library.jpg" width="23%" alt="Library: what is left to sort, quick decks and albums">
+  <img src="docs/screenshots/months.jpg" width="23%" alt="Months as cards, each a mosaic of its photos">
   <img src="docs/screenshots/swipe.jpg" width="23%" alt="Swiping through a month">
   <img src="docs/screenshots/review.jpg" width="23%" alt="Reviewing photos before they are deleted">
 </p>
@@ -284,7 +284,7 @@ A swipe counts the instant you let go. The old card flies off on its own while t
 
 ## 🧰 How it was built
 
-I'm a finance student, not a software engineer. I wrote the brief, made the design calls and tested it on my own phone. **[Claude Code](https://claude.com/claude-code) wrote the Swift.** The first design was thrown out for looking machine-made. The current look, black with the photos edge to edge, was the second attempt. The full story is in the [case study](https://www.warrenlimzf.com/photo-swipe/).
+I'm a finance student, not a software engineer. I wrote the brief, made the design calls and tested it on my own phone. **[Claude Code](https://claude.com/claude-code) wrote the Swift.** The first design was thrown out for looking machine-made. The second was black with the photos edge to edge. Since v1.6.0 it wears a light, friendly look with one tangerine colour, white cards and a little drawn photo stack that swipes itself. The full story is in the [case study](https://www.warrenlimzf.com/photo-swipe/).
 
 | Piece | What it is |
 |---|---|

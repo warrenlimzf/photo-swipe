@@ -19,49 +19,60 @@ struct FinishView: View {
         VStack(spacing: 16) {
             ZStack {
                 Circle()
-                    .fill(RadialGradient(colors: [Theme.keep.opacity(0.35), .clear], center: .center, startRadius: 10, endRadius: 150))
+                    .fill(RadialGradient(colors: [Theme.b300.opacity(0.55), .clear], center: .center, startRadius: 10, endRadius: 150))
                     .frame(width: 300, height: 300)
                     .opacity(shown ? 1 : 0)
                 if !reduceMotion { Burst(emojis: burstEmojis, fired: shown) }
                 Circle()
-                    .fill(Theme.keep)
-                    .frame(width: 100, height: 100)
-                    .shadow(color: Theme.keep.opacity(0.5), radius: 24)
+                    .fill(Theme.keepFill)
+                    .frame(width: 104, height: 104)
+                    .overlay { Circle().strokeBorder(.white, lineWidth: 4) }
+                    .shadow(color: Theme.keep.opacity(0.45), radius: 22, y: 10)
                     .scaleEffect(shown || reduceMotion ? 1 : 0.6)
                 DrawnTick()
                     .trim(from: 0, to: shown ? 1 : 0)
-                    .stroke(Theme.canvas, style: StrokeStyle(lineWidth: 9, lineCap: .round, lineJoin: .round))
-                    .frame(width: 100, height: 100)
+                    .stroke(Color.white, style: StrokeStyle(lineWidth: 9, lineCap: .round, lineJoin: .round))
+                    .frame(width: 104, height: 104)
             }
             .frame(height: 210)
             Text(heading)
-                .font(.largeTitle.bold())
+                .font(.system(.largeTitle, design: .rounded, weight: .bold))
                 .multilineTextAlignment(.center)
                 .opacity(shown ? 1 : 0)
                 .offset(y: shown ? 0 : 10)
-            Text(summary)
-                .font(.body)
-                .monospacedDigit()
-                .multilineTextAlignment(.center)
-                .foregroundStyle(Theme.muted)
-                .opacity(shown ? 1 : 0)
+            HStack(spacing: 10) {
+                chip("\(kept)", "checkmark", Theme.keep)
+                if marked > 0 { chip("\(marked)", "trash.fill", Theme.delete) }
+                ForEach(filed, id: \.0) { emoji, count in
+                    HStack(spacing: 5) {
+                        Text(emoji)
+                        Text("\(count)").font(.numeral(16)).foregroundStyle(Theme.ink)
+                    }
+                    .padding(.horizontal, 12)
+                    .frame(height: 38)
+                    .background(.white, in: Capsule())
+                    .shadow(color: Theme.ink.opacity(0.07), radius: 8, y: 4)
+                }
+            }
+            .opacity(shown ? 1 : 0)
+            .scaleEffect(shown ? 1 : 0.9)
+            .accessibilityElement(children: .ignore)
+            .accessibilityLabel(summary)
             VStack(spacing: 10) {
                 if let nextTitle {
-                    PrimaryButton(title: "Next: \(nextTitle)", color: Theme.keep, action: onNext)
+                    Pill(title: nextTitle, icon: "arrow.right", action: onNext)
                 } else if pending == 0 {
-                    PrimaryButton(title: "Back to library", color: Theme.keep, action: onDone)
+                    Pill(title: "Library", icon: "house.fill", action: onDone)
                 }
                 if pending > 0 {
-                    Button(pending == 1 ? "Review 1 to delete" : "Review \(pending) to delete", action: onReview)
-                        .font(.body.weight(.semibold))
-                        .foregroundStyle(Theme.delete)
-                        .frame(minHeight: 44)
+                    Pill(title: "Review \(pending)", icon: "trash.fill", kind: .whiteDelete, action: onReview)
                 }
                 if nextTitle != nil || pending > 0 {
-                    Button("Back to library", action: onDone)
-                        .font(.body.weight(.medium))
+                    Button("Library", action: onDone)
+                        .font(.system(.body, design: .rounded, weight: .semibold))
                         .foregroundStyle(Theme.muted)
                         .frame(minHeight: 44)
+                        .buttonStyle(PressStyle())
                 }
             }
             .padding(.top, 8)
@@ -76,6 +87,17 @@ struct FinishView: View {
                 withAnimation(.spring(duration: 0.55, bounce: 0.4)) { shown = true }
             }
         }
+    }
+
+    private func chip(_ value: String, _ icon: String, _ tint: Color) -> some View {
+        HStack(spacing: 6) {
+            Image(systemName: icon).font(.subheadline.weight(.bold)).foregroundStyle(tint)
+            Text(value).font(.numeral(16)).foregroundStyle(Theme.ink)
+        }
+        .padding(.horizontal, 14)
+        .frame(height: 38)
+        .background(.white, in: Capsule())
+        .shadow(color: Theme.ink.opacity(0.07), radius: 8, y: 4)
     }
 
     private var summary: String {

@@ -61,12 +61,12 @@ struct AlbumRail: View {
         return Text(album.emoji)
             .font(.system(size: 24))
             .frame(width: 46, height: 46)
-            .background(.ultraThinMaterial, in: Circle())
-            .background { if isOn { Circle().fill(Theme.keep.opacity(0.25)).shadow(color: Theme.keep.opacity(0.6), radius: 10) } }
-            .overlay { Circle().strokeBorder(isOn ? Theme.keep : Theme.hairline, lineWidth: isOn ? 2.5 : 1) }
+            .background(isOn ? Theme.b100 : .white, in: Circle())
+            .shadow(color: isOn ? Theme.b500.opacity(0.45) : Theme.ink.opacity(0.08), radius: isOn ? 10 : 6, y: isOn ? 4 : 3)
+            .overlay { Circle().strokeBorder(Theme.b500, lineWidth: isOn ? 2.5 : 0) }
             .scaleEffect(isLifted ? 1.22 : (isOn && !reduceMotion ? 1.06 : 1))
-            .shadow(color: .black.opacity(isLifted ? 0.5 : 0), radius: 10, y: 6)
-            .opacity(selected.isEmpty || isOn || isLifted ? 1 : 0.7)
+            .shadow(color: Theme.ink.opacity(isLifted ? 0.25 : 0), radius: 12, y: 8)
+            .opacity(selected.isEmpty || isOn || isLifted ? 1 : 0.6)
             .contentShape(Circle())
             .overlay(alignment: .top) {
                 if bubble == album.id {
@@ -151,10 +151,11 @@ struct AlbumRail: View {
     private var addButton: some View {
         Button(action: onAdd) {
             Image(systemName: "plus")
-                .font(.body.weight(.semibold))
-                .foregroundStyle(Theme.ink)
+                .font(.body.weight(.bold))
+                .foregroundStyle(.white)
                 .frame(width: 46, height: 46)
-                .overlay { Circle().strokeBorder(Theme.ink.opacity(0.35), style: StrokeStyle(lineWidth: 1.2, dash: [4, 3])) }
+                .background(Theme.cta, in: Circle())
+                .shadow(color: Theme.b500.opacity(0.35), radius: 8, y: 4)
         }
         .buttonStyle(PressStyle())
         .accessibilityLabel("New album")
@@ -183,11 +184,12 @@ private struct NameBubble: View {
 
     var body: some View {
         Label(name, systemImage: isOn ? "checkmark" : "xmark")
-            .font(.subheadline.weight(.semibold))
-            .foregroundStyle(Theme.ink)
+            .font(.system(.subheadline, design: .rounded, weight: .semibold))
+            .foregroundStyle(.white)
             .padding(.horizontal, 12)
             .padding(.vertical, 8)
-            .background(.ultraThinMaterial, in: Capsule())
+            .background(isOn ? AnyShapeStyle(Theme.cta) : AnyShapeStyle(Theme.ink), in: Capsule())
+            .shadow(color: Theme.ink.opacity(0.15), radius: 8, y: 4)
             .fixedSize()
     }
 }

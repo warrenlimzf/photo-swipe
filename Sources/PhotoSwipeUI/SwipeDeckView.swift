@@ -47,9 +47,17 @@ struct SwipeDeckView: View {
 
     var body: some View {
         VStack(spacing: 12) {
-            topBar
-            ProgressLine(value: Double(session.index) / Double(max(session.ids.count, 1)), height: 5)
-                .padding(.horizontal, 4)
+            // The Library's hero, shrunk into a header.
+            VStack(spacing: 14) {
+                topBar
+                ProgressLine(value: Double(session.index) / Double(max(session.ids.count, 1)), height: 6,
+                             track: .white.opacity(0.22), onBrand: true)
+                    .padding(.horizontal, 4)
+            }
+            .padding(.horizontal, 18)
+            .padding(.bottom, 18)
+            .background { HeroShape(radius: 30).ignoresSafeArea(edges: .top) }
+            .padding(.horizontal, -16)
             ZStack {
                 if session.isFinished {
                     finished.transition(.opacity)
@@ -89,11 +97,15 @@ struct SwipeDeckView: View {
         // Only the close button leaves. A stray swipe or pinch outside the photo must not
         // zoom the screen back to the calendar and lose the place.
         .interactiveDismissDisabled()
-        .sheet(isPresented: $showTrash) { ReviewDeleteView() }
+        // The cover takes over the status bar and turns it dark over the orange header; the deck
+        // is a full-screen moment anyway, so the clock goes.
+        .hideStatusBar()
+        .sheet(isPresented: $showTrash) { ReviewDeleteView().preferredColorScheme(.light) }
         .sheet(item: $editor) { target in
             AlbumEditor(editing: target.album) { newID in
                 withAnimation(.spring(duration: 0.3)) { selectedAlbums = [newID] }
             }
+            .preferredColorScheme(.light)
         }
         .onChange(of: model.state.shelf.map(\.id)) { _, ids in
             selectedAlbums.formIntersection(ids)
@@ -102,10 +114,11 @@ struct SwipeDeckView: View {
             if let message = model.albumError {
                 Text(message)
                     .font(.subheadline.weight(.semibold))
-                    .foregroundStyle(Theme.ink)
+                    .foregroundStyle(.white)
                     .padding(.horizontal, 16)
                     .padding(.vertical, 10)
-                    .background(.ultraThinMaterial, in: Capsule())
+                    .background(Theme.deleteFill, in: Capsule())
+                    .shadow(color: Theme.delete.opacity(0.35), radius: 10, y: 5)
                     .padding(.top, 56)
                     .transition(.move(edge: .top).combined(with: .opacity))
                     .task {
@@ -136,57 +149,59 @@ struct SwipeDeckView: View {
             Button { dismiss() } label: {
                 Image(systemName: "xmark")
                     .font(.subheadline.weight(.bold))
+                    .foregroundStyle(.white)
                     .frame(width: 44, height: 44)
-                    .background(.ultraThinMaterial, in: Circle())
+                    .background(.white.opacity(0.18), in: Circle())
             }
             .buttonStyle(PressStyle())
             .accessibilityLabel("Close")
             Spacer()
             VStack(spacing: 4) {
                 Text(title)
-                    .font(.caption.weight(.semibold))
-                    .tracking(1.4)
-                    .textCase(.uppercase)
+                    .font(.system(.headline, design: .rounded, weight: .bold))
+                    .lineLimit(1)
                 Text("\(min(session.index + 1, session.ids.count)) / \(session.ids.count)")
-                    .font(.footnote)
-                    .monospacedDigit()
-                    .foregroundStyle(Theme.muted)
+                    .font(.numeral(13, weight: .semibold))
+                    .foregroundStyle(.white.opacity(0.75))
                     .contentTransition(.numericText())
                     .animation(.snappy, value: session.index)
             }
             Spacer()
             Button { showTrash = true } label: {
                 HStack(spacing: 6) {
-                    Image(systemName: "trash")
+                    Image(systemName: "trash.fill")
+                        .foregroundStyle(Theme.delete)
                         .symbolEffect(.bounce, value: model.state.pendingDeletes.count)
                     Text("\(model.state.pendingDeletes.count)")
-                        .monospacedDigit()
+                        .font(.numeral(15))
+                        .foregroundStyle(Theme.ink)
                         .contentTransition(.numericText())
                         .animation(.snappy, value: model.state.pendingDeletes.count)
                 }
                 .font(.subheadline.weight(.semibold))
                 .padding(.horizontal, 14)
                 .frame(minWidth: 44, minHeight: 44)
-                .background(.ultraThinMaterial, in: Capsule())
+                .background(.white, in: Capsule())
+                .shadow(color: Theme.ink.opacity(0.08), radius: 8, y: 4)
             }
             .buttonStyle(PressStyle())
             .disabled(model.state.pendingDeletes.isEmpty)
             .accessibilityLabel("\(model.state.pendingDeletes.count) to delete")
         }
-        .foregroundStyle(Theme.ink)
+        .foregroundStyle(.white)
     }
 
     /// Bookmark on the left, when the photo was taken in the middle, details on the right.
     private var caption: some View {
         HStack(spacing: 12) {
-            SmallButton(icon: isBookmarked ? "bookmark.fill" : "bookmark", tint: isBookmarked ? Theme.keep : Theme.ink) {
+            SmallButton(icon: isBookmarked ? "bookmark.fill" : "bookmark", tint: isBookmarked ? Theme.b500 : Theme.ink) {
                 toggleBookmark()
             }
             .accessibilityLabel(isBookmarked ? "Remove bookmark" : "Bookmark")
             VStack(spacing: 3) {
                 if let id = session.current, let ref = model.library.ref(id) {
                     Text(ref.date.formatted(date: .abbreviated, time: .shortened))
-                        .font(.subheadline.weight(.medium))
+                        .font(.system(.subheadline, design: .rounded, weight: .semibold))
                         .foregroundStyle(Theme.ink)
                         .contentTransition(.numericText())
                     if showInfo {
@@ -217,13 +232,13 @@ struct SwipeDeckView: View {
 
     /// Three buttons, mirrored around undo: delete on the left, keep on the right.
     private var controls: some View {
-        HStack(spacing: 34) {
-            RoundButton(icon: "xmark", fill: Theme.delete, large: true) { decide(.delete) }
+        HStack(spacing: 30) {
+            RoundButton(icon: "xmark", fill: Theme.deleteFill, glow: Theme.delete, large: true) { decide(.delete) }
                 .accessibilityLabel("Delete")
             RoundButton(icon: "arrow.uturn.backward") { undo() }
                 .disabled(!canUndo)
                 .accessibilityLabel("Undo")
-            RoundButton(icon: "checkmark", fill: Theme.keep, large: true) { decide(.keep) }
+            RoundButton(icon: "checkmark", fill: Theme.keepFill, glow: Theme.keep, large: true) { decide(.keep) }
                 .accessibilityLabel("Keep")
         }
         .padding(.bottom, 4)
@@ -301,7 +316,7 @@ struct SwipeDeckView: View {
     /// rises into place, so there is never a wait between swipes.
     private func decide(_ decision: Decision) {
         guard let id = session.current, !isUndoing else { return }
-        Haptics.tap(model.hapticsEnabled)
+        Haptics.thud(model.hapticsEnabled)
         var filed: [String] = []
         var movedOut: [String] = []
         if decision == .keep, let target = selectedAlbums.first {
@@ -366,16 +381,16 @@ private struct Ambient: View, Equatable {
 
     var body: some View {
         ZStack {
-            Theme.canvas
+            Theme.page
             if let id {
                 Color.clear
-                    .overlay { AssetImage(id: id, side: 300, fill: true, placeholder: false).blur(radius: 60) }
+                    .overlay { AssetImage(id: id, side: 300, fill: true, placeholder: false).blur(radius: 70) }
                     .clipped()
-                    .opacity(0.38)
+                    .opacity(0.3)
                     .id(id)
                     .transition(.opacity)
             }
-            LinearGradient(colors: [Theme.canvas.opacity(0.7), Theme.canvas.opacity(0.2), Theme.canvas.opacity(0.85)],
+            LinearGradient(colors: [Theme.page.opacity(0.85), Theme.page.opacity(0.35), Theme.page.opacity(0.95)],
                            startPoint: .top, endPoint: .bottom)
         }
         .animation(.easeInOut(duration: 0.6), value: id)
@@ -403,8 +418,9 @@ private struct FlyingCard: View {
 
 private struct RoundButton: View {
     let icon: String
-    /// Filled buttons carry the verdict colour; the rest are quiet glass.
-    var fill: Color?
+    /// Filled buttons carry the verdict colour; the rest are plain white.
+    var fill: LinearGradient?
+    var glow: Color = .clear
     var large = false
     let action: () -> Void
     @Environment(\.isEnabled) private var isEnabled
@@ -412,18 +428,19 @@ private struct RoundButton: View {
     var body: some View {
         Button(action: action) {
             Image(systemName: icon)
-                .font(large ? .title2.weight(.bold) : .body.weight(.semibold))
-                .foregroundStyle(fill == nil ? Theme.ink : Theme.canvas)
-                .frame(width: large ? 70 : 50, height: large ? 70 : 50)
+                .font(large ? .system(size: 28, weight: .heavy) : .system(size: 19, weight: .bold))
+                .foregroundStyle(fill == nil ? Theme.ink : .white)
+                .frame(width: large ? 76 : 54, height: large ? 76 : 54)
                 .background {
                     if let fill {
-                        Circle().fill(fill).shadow(color: fill.opacity(0.45), radius: 14, y: 6)
+                        Circle().fill(fill).shadow(color: glow.opacity(0.45), radius: 16, y: 8)
                     } else {
-                        Circle().fill(.ultraThinMaterial)
+                        Circle().fill(.white).shadow(color: Theme.ink.opacity(0.1), radius: 10, y: 5)
                     }
                 }
         }
-        .buttonStyle(PressStyle())
+        // The verdict has its own thud; only undo gets the soft press.
+        .buttonStyle(PressStyle(haptic: fill == nil))
         .opacity(isEnabled ? 1 : 0.3)
         .animation(.easeOut(duration: 0.2), value: isEnabled)
     }
@@ -441,7 +458,8 @@ private struct SmallButton: View {
                 .contentTransition(.symbolEffect(.replace))
                 .foregroundStyle(tint)
                 .frame(width: 44, height: 44)
-                .background(.ultraThinMaterial, in: Circle())
+                .background(.white, in: Circle())
+                .shadow(color: Theme.ink.opacity(0.08), radius: 8, y: 4)
         }
         .buttonStyle(PressStyle())
     }
@@ -458,7 +476,7 @@ private struct CardView: View {
     var body: some View {
         let ref = model.library.ref(id)
         let ratio = ref.map { CGFloat($0.pixelWidth) / CGFloat(max($0.pixelHeight, 1)) } ?? 0.75
-        Theme.card
+        Theme.fill
             .aspectRatio(ratio, contentMode: .fit)
             .overlay {
                 if let player {
@@ -473,7 +491,8 @@ private struct CardView: View {
                                 .font(.title)
                                 .foregroundStyle(.white)
                                 .frame(width: 76, height: 76)
-                                .background(.ultraThinMaterial, in: Circle())
+                                .background(Theme.cta, in: Circle())
+                                .shadow(color: Theme.b500.opacity(0.4), radius: 12, y: 6)
                         }
                         .buttonStyle(PressStyle())
                         .accessibilityLabel("Play video")
@@ -484,8 +503,8 @@ private struct CardView: View {
             .overlay { (drag.width > 0 ? Theme.keep : Theme.delete).opacity(Double(min(abs(drag.width) / 100, 1)) * 0.22) }
             .overlay(alignment: .topLeading) { stamp(filing.isEmpty ? "Keep" : "Keep \(filing)", "checkmark", Theme.keep, drag.width) }
             .overlay(alignment: .topTrailing) { stamp("Delete", "xmark", Theme.delete, -drag.width) }
-            .clipShape(RoundedRectangle(cornerRadius: 24, style: .continuous))
-            .shadow(color: .black.opacity(0.45), radius: 26, y: 16)
+            .clipShape(RoundedRectangle(cornerRadius: 30, style: .continuous))
+            .shadow(color: Theme.ink.opacity(0.18), radius: 24, y: 14)
             .onDisappear { player?.pause() }
     }
 
@@ -493,11 +512,13 @@ private struct CardView: View {
     private func stamp(_ text: String, _ icon: String, _ color: Color, _ amount: CGFloat) -> some View {
         let strength = Double(min(max(amount / 100, 0), 1))
         return Label(text, systemImage: icon)
-            .font(.subheadline.weight(.bold))
-            .foregroundStyle(Theme.canvas)
-            .padding(.horizontal, 14)
-            .padding(.vertical, 9)
+            .font(.system(.headline, design: .rounded, weight: .heavy))
+            .foregroundStyle(.white)
+            .padding(.horizontal, 16)
+            .padding(.vertical, 10)
             .background(color, in: Capsule())
+            .overlay { Capsule().strokeBorder(.white, lineWidth: 2.5) }
+            .shadow(color: .black.opacity(0.2), radius: 8, y: 4)
             .scaleEffect(0.85 + 0.15 * strength)
             .padding(16)
             .opacity(strength)
