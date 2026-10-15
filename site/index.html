@@ -67,7 +67,7 @@
   .lede { font-size: clamp(1.15rem, 1.6vw, 1.45rem); color: rgba(255, 255, 255, .85); margin: 1.8rem 0 0; max-width: 40ch; }
   .lede b { color: #fff; font-weight: 600; }
   .actions { display: flex; flex-wrap: wrap; gap: .8rem; margin-top: 2.2rem; align-items: center; }
-  .btn { display: inline-flex; align-items: center; gap: .65rem; padding: 1.05rem 1.6rem; border-radius: 999px; font-weight: 700; font-size: 1.05rem; transition: transform .3s var(--ease), background .3s, box-shadow .3s; will-change: transform; }
+  .btn { display: inline-flex; align-items: center; gap: .65rem; padding: 1.05rem 1.6rem; border-radius: 999px; font-weight: 700; font-size: 1.05rem; transition: transform .3s var(--ease), background .3s, box-shadow .3s; }
   .btn-go { background: var(--cta); color: #fff; box-shadow: 0 18px 40px -18px rgba(226, 82, 15, .9); }
   .btn-go:hover { box-shadow: 0 24px 60px -16px rgba(226, 82, 15, 1); }
   .hero .btn-go { background: #fff; color: var(--b700); box-shadow: 0 18px 40px -18px rgba(120, 36, 0, .7); }
@@ -140,7 +140,7 @@
   .storm { position: relative; height: 100svh; overflow: hidden; }
   .storm .phw { position: absolute; width: clamp(110px, 13vw, 210px); aspect-ratio: 3 / 4; will-change: transform; }
   .storm .ph, .orbit .ph { border: clamp(5px, .5vw, 8px) solid #fff; background-clip: padding-box; }
-  .storm .ph { position: absolute; inset: 0; border-radius: 16px; background-color: #ddd; background-position: center; background-size: cover; box-shadow: 0 30px 60px -30px rgba(23, 21, 31, .45), 0 2px 8px rgba(23, 21, 31, .06); will-change: transform; }
+  .storm .ph { position: absolute; inset: 0; border-radius: 16px; background-color: #ddd; background-position: center; background-size: cover; box-shadow: 0 30px 60px -30px rgba(23, 21, 31, .45), 0 2px 8px rgba(23, 21, 31, .06); }
   .storm-copy { position: absolute; inset: 0; display: grid; place-items: center; text-align: center; pointer-events: none; z-index: 3; }
   .storm-copy h2 { font-family: var(--display); font-weight: 400; font-size: clamp(3.2rem, 9vw, 9rem); line-height: .9; letter-spacing: -.035em; margin: 0; text-shadow: 0 6px 50px rgba(245, 244, 242, .95); }
   .storm-copy h2 em { color: var(--b700); } .storm-copy h2 em.b { color: var(--bin); }
@@ -530,7 +530,9 @@
   gsap.from(".bigword", { scale: 0.4, opacity: 0, duration: 1.6, ease: "expo.out", delay: 0.4 });
   // Hero parallax: the phone drifts slower than the words as you leave.
   // Leaving the hero: every layer moves at its own speed, so scrolling itself feels alive.
-  const heroST = { trigger: ".hero", start: "top top", end: "bottom top", scrub: true };
+  // scrub 0.4, not true: a mouse wheel scrolls in ~100px notches, and scrub: true turned each notch into a
+  // one-frame jump of every layer (the "shake"). A short catch-up glides between notches; the scroll itself stays native.
+  const heroST = { trigger: ".hero", start: "top top", end: "bottom top", scrub: 0.4 };
   gsap.to(".stage", { yPercent: -16, rotate: -7, scale: 0.94, ease: "none", scrollTrigger: heroST }); // the stage, not the phone, so the swipe wobble never fights the scroll
   gsap.to(".bigword", { yPercent: -70, ease: "none", scrollTrigger: heroST });
   gsap.to(".glow", { scale: 1.6, opacity: 0.6, ease: "none", scrollTrigger: heroST });
@@ -566,7 +568,7 @@
   const keepN = wraps.filter((w) => w.dataset.keep === "1").length, binN = wraps.length - keepN;
   gsap.set(wraps, { rotate: (i, w) => +w.dataset.r, scale: (i, w) => +w.dataset.s });
   const tl = gsap.timeline({
-    scrollTrigger: { trigger: storm, start: "top top", end: "+=220%", pin: true, scrub: true, anticipatePin: 1,
+    scrollTrigger: { trigger: storm, start: "top top", end: "+=220%", pin: true, scrub: 0.5, // see heroST: smooths wheel notches; no anticipatePin (it nudged the pin a notch early)
       onUpdate: (st) => { const p = Math.min(1, Math.max(0, (st.progress - 0.3) / 0.5)); $("#pk").textContent = Math.round(p * keepN); $("#pb").textContent = Math.round(p * binN); } },
   });
   tl.fromTo(pics, { scale: 0, opacity: 0, rotate: () => rnd(-120, 120) }, { scale: 1, opacity: 1, rotate: 0, duration: 0.6, stagger: { each: 0.02, from: "random" }, ease: "back.out(1.6)" }, 0)
@@ -591,7 +593,10 @@
       scrollTrigger: { trigger: ".shots", start: "top 82%" } });
   });
   document.querySelectorAll(".tilt").forEach((el) => {
+    let lx = -1, ly = -1;
     el.addEventListener("pointermove", (e) => {
+      // Browsers fire a pointermove after a wheel scroll with the cursor standing still; ignore it, or the shots wobble as they pass under the mouse.
+      if (e.clientX === lx && e.clientY === ly) return; lx = e.clientX; ly = e.clientY;
       const r = el.getBoundingClientRect(), x = (e.clientX - r.left) / r.width - 0.5, y = (e.clientY - r.top) / r.height - 0.5;
       el.style.transform = `rotateY(${x * 18}deg) rotateX(${-y * 14}deg) translateZ(30px)`;
     });
