@@ -23,3 +23,9 @@
 - Cause: `CardView` took the photo's own aspect ratio, so a landscape card was a short strip and the band around it was empty page. The playing video was an AVKit `VideoPlayer`, which takes touches for its own controls.
 - Fix: every card is one portrait rectangle (`cardRatio` 3:4) with `contentShape`; wider media sits fitted over a blurred copy of itself. Video plays in a bare `AVPlayerLayer` view with hit testing off; tapping the card pauses/resumes.
 - Don't retry: AVKit `VideoPlayer` on the card (it eats drags), or sizing the card to the photo.
+
+## 2026-10-15 — landing page shook under a mouse wheel (ed9a13c)
+- Seen: scrolling warrenlimzf.com/photo-swipe with a mouse wheel shook the hero and the photo storm; a trackpad looked fine.
+- Cause: a wheel scrolls in ~100px notches and every ScrollTrigger used `scrub: true`, so each notch became a one-frame jump of every scrubbed layer. Measured with real wheel input in Chromium: storm photos jumped up to 114px in one frame, the hero layers up to 86px. A trackpad sends many small deltas, which hid it.
+- Fix: hero `scrub: 0.4`, storm `scrub: 0.5` (scroll stays native, only the animation glides between notches: pinned photos now max 36px/frame, avg 7px), dropped `anticipatePin`, `will-change` off `.btn` and `.storm .ph`, and the shot tilt ignores the pointermove a browser fires after a scroll with the cursor still.
+- Don't retry: Lenis or any smooth-scroll layer (Warren wants native scroll), or `pinType: "transform"` (it would make the pinned scene itself step with each notch).

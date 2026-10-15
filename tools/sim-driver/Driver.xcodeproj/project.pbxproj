@@ -1,0 +1,32 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {};
+	objectVersion = 56;
+	objects = {
+		A1000000000000000000001 = {isa = PBXBuildFile; fileRef = A1000000000000000000011; };
+		A1000000000000000000002 = {isa = PBXBuildFile; fileRef = A1000000000000000000012; };
+		A1000000000000000000011 = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DriverApp.swift; sourceTree = "<group>"; };
+		A1000000000000000000012 = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DriveTests.swift; sourceTree = "<group>"; };
+		A1000000000000000000013 = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Driver.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		A1000000000000000000014 = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = DriverUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		A1000000000000000000020 = {isa = PBXGroup; children = (A1000000000000000000021, A1000000000000000000022, A1000000000000000000023); sourceTree = "<group>"; };
+		A1000000000000000000021 = {isa = PBXGroup; children = (A1000000000000000000011); path = Driver; sourceTree = "<group>"; };
+		A1000000000000000000022 = {isa = PBXGroup; children = (A1000000000000000000012); path = DriverUITests; sourceTree = "<group>"; };
+		A1000000000000000000023 = {isa = PBXGroup; children = (A1000000000000000000013, A1000000000000000000014); name = Products; sourceTree = "<group>"; };
+		A1000000000000000000031 = {isa = PBXSourcesBuildPhase; buildActionMask = 2147483647; files = (A1000000000000000000001); runOnlyForDeploymentPostprocessing = 0; };
+		A1000000000000000000032 = {isa = PBXSourcesBuildPhase; buildActionMask = 2147483647; files = (A1000000000000000000002); runOnlyForDeploymentPostprocessing = 0; };
+		A1000000000000000000041 = {isa = PBXNativeTarget; buildConfigurationList = A1000000000000000000061; buildPhases = (A1000000000000000000031); buildRules = (); dependencies = (); name = Driver; productName = Driver; productReference = A1000000000000000000013; productType = "com.apple.product-type.application"; };
+		A1000000000000000000042 = {isa = PBXNativeTarget; buildConfigurationList = A1000000000000000000062; buildPhases = (A1000000000000000000032); buildRules = (); dependencies = (A1000000000000000000051); name = DriverUITests; productName = DriverUITests; productReference = A1000000000000000000014; productType = "com.apple.product-type.bundle.ui-testing"; };
+		A1000000000000000000051 = {isa = PBXTargetDependency; target = A1000000000000000000041; targetProxy = A1000000000000000000052; };
+		A1000000000000000000052 = {isa = PBXContainerItemProxy; containerPortal = A1000000000000000000090; proxyType = 1; remoteGlobalIDString = A1000000000000000000041; remoteInfo = Driver; };
+		A1000000000000000000061 = {isa = XCConfigurationList; buildConfigurations = (A1000000000000000000071); defaultConfigurationName = Debug; };
+		A1000000000000000000062 = {isa = XCConfigurationList; buildConfigurations = (A1000000000000000000072); defaultConfigurationName = Debug; };
+		A1000000000000000000063 = {isa = XCConfigurationList; buildConfigurations = (A1000000000000000000073); defaultConfigurationName = Debug; };
+		A1000000000000000000071 = {isa = XCBuildConfiguration; buildSettings = {PRODUCT_BUNDLE_IDENTIFIER = com.example.driver; PRODUCT_NAME = Driver; GENERATE_INFOPLIST_FILE = YES; INFOPLIST_KEY_UILaunchScreen_Generation = YES; SWIFT_VERSION = 5.0; TARGETED_DEVICE_FAMILY = 1; }; name = Debug; };
+		A1000000000000000000072 = {isa = XCBuildConfiguration; buildSettings = {PRODUCT_BUNDLE_IDENTIFIER = com.example.driver.uitests; PRODUCT_NAME = DriverUITests; GENERATE_INFOPLIST_FILE = YES; SWIFT_VERSION = 5.0; TARGETED_DEVICE_FAMILY = 1; TEST_TARGET_NAME = Driver; }; name = Debug; };
+		A1000000000000000000073 = {isa = XCBuildConfiguration; buildSettings = {SDKROOT = iphoneos; IPHONEOS_DEPLOYMENT_TARGET = 18.0; CODE_SIGN_IDENTITY = "-"; CODE_SIGN_STYLE = Manual; ONLY_ACTIVE_ARCH = YES; ENABLE_TESTABILITY = YES; }; name = Debug; };
+		A1000000000000000000090 = {isa = PBXProject; buildConfigurationList = A1000000000000000000063; compatibilityVersion = "Xcode 14.0"; mainGroup = A1000000000000000000020; productRefGroup = A1000000000000000000023; projectDirPath = ""; projectRoot = ""; targets = (A1000000000000000000041, A1000000000000000000042); attributes = {TargetAttributes = {A1000000000000000000042 = {TestTargetID = A1000000000000000000041; }; }; }; };
+	};
+	rootObject = A1000000000000000000090;
+}
