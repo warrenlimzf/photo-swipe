@@ -167,6 +167,24 @@
   .mini img { border-radius: 30px; width: 100%; aspect-ratio: 804 / 1748; object-fit: cover; object-position: top; }
   .shot:nth-child(2) .word { color: var(--b700); } .shot:nth-child(3) .word { color: var(--bin); }
 
+  /* ---------- colours: the six palettes from Palette.swift, one drifting mesh at a time ---------- */
+  .colours { padding-block: 4rem 9rem; overflow-x: clip; }
+  .colours .sec-title em { transition: color .9s var(--ease); }
+  .swatch { position: relative; isolation: isolate; height: clamp(24rem, 56svh, 34rem); border-radius: clamp(2rem, 4vw, 3.5rem); overflow: hidden; box-shadow: 0 60px 100px -60px var(--glowc, rgba(226, 82, 15, .9)); transition: box-shadow .9s var(--ease); }
+  .mesh { position: absolute; inset: 0; opacity: 0; transition: opacity .9s var(--ease); }
+  .mesh.on { opacity: 1; }
+  /* 3x3 colour points like the app's MeshGradient; the oversized inner layer drifts. */
+  .mesh i { position: absolute; inset: -25%; animation: drift 14s ease-in-out infinite alternate; }
+  @keyframes drift { 0% { transform: translate(-4%, -3%) rotate(-6deg) scale(1); } 50% { transform: translate(3%, 4%) rotate(4deg) scale(1.08); } 100% { transform: translate(5%, -4%) rotate(9deg) scale(1.02); } }
+  .pname { position: absolute; left: clamp(1.5rem, 4vw, 3.5rem); top: clamp(1.4rem, 3.5vw, 3rem); z-index: 2; margin: 0; font-family: var(--display); font-style: italic; font-weight: 400; font-size: clamp(3.4rem, min(13vw, 20svh), 12rem); line-height: .9; letter-spacing: -.04em; color: #fff; white-space: nowrap; text-shadow: 0 10px 50px rgba(0, 0, 0, .18); }
+  .pname span { display: inline-block; }
+  .icons { position: relative; z-index: 3; display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: clamp(.6rem, 1.6vw, 1.6rem); width: min(100%, 52rem); margin: clamp(-4.5rem, -6vw, -2.5rem) auto 0; padding: clamp(.8rem, 1.6vw, 1.3rem); border-radius: clamp(1.6rem, 3vw, 2.4rem); background: var(--card); box-shadow: 0 30px 60px -36px rgba(23, 21, 31, .45); }
+  .icons button { padding: 0; border: 0; background: none; border-radius: 22.5%; aspect-ratio: 1; transition: transform .5s cubic-bezier(.34, 1.56, .64, 1), box-shadow .5s; }
+  .icons img { width: 100%; height: 100%; border-radius: 22.5%; }
+  .icons button:hover { transform: translateY(-4px); }
+  .icons button.on { transform: translateY(-10px) scale(1.12); box-shadow: 0 0 0 3px #fff, 0 0 0 6px var(--ring, var(--b500)), 0 18px 30px -14px var(--ring, var(--b500)); }
+  @media (max-width: 40rem) { .icons { grid-template-columns: repeat(3, minmax(0, 1fr)); width: min(100%, 22rem); } }
+
   /* ---------- marquee ---------- */
   .marquee { padding-block: 4rem; border-block: 1px solid var(--hairline); overflow: hidden; }
   .track { display: flex; width: max-content; gap: 3rem; font-family: var(--display); font-size: clamp(3.5rem, 9vw, 8.5rem); line-height: 1; letter-spacing: -.03em; white-space: nowrap; will-change: transform; }
@@ -294,6 +312,17 @@
         <div class="shot reveal-up"><div class="word">Review.</div><div class="mini tilt"><img src="img/v16-review.jpg" alt="The review grid before deleting" loading="lazy"></div></div>
         <div class="shot reveal-up"><div class="word">Albums.</div><div class="mini tilt"><img src="img/v16-album.jpg" alt="An emoji album" loading="lazy"></div></div>
       </div>
+    </div>
+  </section>
+
+  <!-- COLOURS: v1.7's six palettes. Job: shows you make it yours, by watching it change. -->
+  <section class="colours" id="colours" aria-label="Six colour themes">
+    <div class="wrap">
+      <h2 class="sec-title reveal">Pick your <em id="cword">colours.</em></h2>
+      <div class="swatch" id="swatch">
+        <p class="pname" aria-live="polite"><span id="pname">Tangerine</span></p>
+      </div>
+      <div class="icons" id="icons"></div>
     </div>
   </section>
 
@@ -456,6 +485,50 @@
   function stopAuto() { clearTimeout(idleTimer); clearTimeout(autoTimer); }
   fill(); showPos(); startAuto(1800);
 
+  /* ---------------- colours: the six palettes, cycling while in view ---------------- */
+  // Mesh colours (top row first) and the deep shade, straight from Sources/PhotoSwipeUI/Palette.swift.
+  const PALETTES = [
+    ["Tangerine", "D9480F F26B1D FF9A3C EF5A14 FF8A1F FFB45E FF7A1A FF9F45 FFC071", "E2520F"],
+    ["Sunset", "FF8A3D FF6B6B D9437F FF7A4D F2506E B43A8C FFB15C FF7A7A 8A3FB5", "C8325F"],
+    ["Aurora", "3A1FB8 5227FF 2F8BFF 4A2BE0 3B6CF0 22B8A6 5227FF 2AA3C9 6FE08A", "4A22E0"],
+    ["Ocean", "0B3D91 0B5CAD 0E9AAE 1356B8 1E86E8 22B5C7 1A6FD6 3FA4F5 6FD9D0", "0B5CAD"],
+    ["Berry", "8E1550 B2195F E23D85 A01A6A D9337A FF6FA8 6A1B9A C2307E FF9CC8", "B2195F"],
+    ["Midnight", "0F0C1D 1F1B3A 3B2A6B 1A1730 2D2452 5B3FA0 15122A 2E2560 7B61FF", "2A2150"],
+  ];
+  const swatch = $("#swatch"), iconsEl = $("#icons"), pnameEl = $("#pname"), cword = $("#cword");
+  const AT = ["0% 0%", "50% 0%", "100% 0%", "0% 50%", "50% 50%", "100% 50%", "0% 100%", "50% 100%", "100% 100%"];
+  const meshes = PALETTES.map(([name, hex]) => {
+    const c = hex.split(" ").map((h) => "#" + h);
+    const m = document.createElement("div"); m.className = "mesh";
+    const i = document.createElement("i");
+    i.style.background = AT.map((at, k) => `radial-gradient(at ${at}, ${c[k]} 0, transparent ${k === 4 ? 70 : 58}%)`).join(", ") + `, ${c[4]}`;
+    i.style.animationDelay = `${-Math.random() * 14}s`;
+    m.appendChild(i); swatch.prepend(m); return m;
+  });
+  const icons = PALETTES.map(([name], k) => {
+    const b = document.createElement("button");
+    b.type = "button"; b.setAttribute("aria-label", `${name} colours`);
+    b.innerHTML = `<img src="img/palettes/${name.toLowerCase()}.png" alt="" loading="lazy">`;
+    b.addEventListener("click", () => { pick(k); stopCycle(); cycleTimer = setTimeout(startCycle, 6000); });
+    iconsEl.appendChild(b); return b;
+  });
+  let current = -1, cycleTimer, inView = false;
+  function pick(k) {
+    if (k === current) return; current = k;
+    const [name, , deep] = PALETTES[k];
+    meshes.forEach((m, j) => m.classList.toggle("on", j === k));
+    icons.forEach((b, j) => { b.classList.toggle("on", j === k); b.setAttribute("aria-pressed", j === k); });
+    iconsEl.style.setProperty("--ring", "#" + deep);
+    swatch.style.setProperty("--glowc", `#${deep}cc`);
+    cword.style.color = "#" + deep;
+    pnameEl.textContent = name;
+    if (hasGsap && !reduced) gsap.fromTo(pnameEl, { yPercent: 60, opacity: 0, rotate: 3 }, { yPercent: 0, opacity: 1, rotate: 0, duration: 0.9, ease: "expo.out" });
+  }
+  function startCycle() { stopCycle(); if (reduced || !inView) return; cycleTimer = setInterval(() => pick((current + 1) % PALETTES.length), 2200); }
+  function stopCycle() { clearTimeout(cycleTimer); clearInterval(cycleTimer); }
+  pick(0);
+  new IntersectionObserver(([e]) => { inView = e.isIntersecting; inView ? startCycle() : stopCycle(); }, { threshold: 0.35 }).observe(swatch);
+
   /* ---------------- entrances ---------------- */
   if (!hasGsap || reduced) { document.querySelectorAll("h1 .line").forEach((l) => l.classList.add("open")); return; }
 
@@ -522,7 +595,7 @@
     .to({}, { duration: 0.4 });
 
   /* ---------------- screens: tilt in, then follow the mouse ---------------- */
-  gsap.from(".sec-title", { y: 80, opacity: 0, duration: 1.2, ease: "expo.out", scrollTrigger: { trigger: ".screens", start: "top 75%" } });
+  gsap.from(".screens .sec-title", { y: 80, opacity: 0, duration: 1.2, ease: "expo.out", scrollTrigger: { trigger: ".screens", start: "top 75%" } });
   gsap.utils.toArray(".shot").forEach((s, i) => {
     gsap.from(s, { y: 180, rotateX: 35, rotateY: i % 2 ? -10 : 10, opacity: 0, duration: 1.4, ease: "expo.out", delay: i * 0.1,
       scrollTrigger: { trigger: ".shots", start: "top 82%" } });
@@ -534,6 +607,12 @@
     });
     el.addEventListener("pointerleave", () => (el.style.transform = ""));
   });
+
+  /* ---------------- colours: the panel swings up, the icons drop in one by one ---------------- */
+  gsap.from(".colours .sec-title", { y: 80, opacity: 0, duration: 1.2, ease: "expo.out", scrollTrigger: { trigger: ".colours", start: "top 75%" } });
+  gsap.from("#swatch", { y: 140, rotateX: 18, scale: 0.92, opacity: 0, duration: 1.4, ease: "expo.out", transformPerspective: 1400, scrollTrigger: { trigger: "#swatch", start: "top 85%" } });
+  gsap.from("#icons button", { y: 90, rotate: (i) => (i % 2 ? 14 : -14), scale: 0.4, opacity: 0, duration: 1.1, ease: "back.out(1.8)", stagger: 0.07, clearProps: "transform",
+    scrollTrigger: { trigger: "#icons", start: "top 92%" } });
 
   /* ---------------- marquee: drifts on its own, speeds and skews with your scroll ---------------- */
   const tracks = [[$("#t1"), -1], [$("#t2"), 1]];
