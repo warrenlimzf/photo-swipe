@@ -1,0 +1,12 @@
+{
+  "name": "photo-swipe-store-notifications",
+  "private": true,
+  "description": "Optional App Store Server Notifications V2 webhook for Photo Swipe. Not deployed; see docs/payments.md.",
+  "type": "module",
+  "dependencies": {
+    "@apple/app-store-server-library": "^3.1.0"
+  },
+  "devDependencies": {
+    "typescript": "^5.6.0"
+  }
+}
