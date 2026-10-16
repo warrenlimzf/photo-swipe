@@ -2,9 +2,6 @@ import SwiftUI
 
 public struct RootView: View {
     @State private var model = AppModel()
-    @State private var store = Store()
-    /// Lags `store.unlocked` by a beat on purchase, so the confetti plays before the app opens.
-    @State private var gated: Bool?
     @State private var showSplash = true
     @Environment(\.scenePhase) private var scenePhase
 
@@ -13,9 +10,7 @@ public struct RootView: View {
     public var body: some View {
         ZStack {
             Group {
-                if gated ?? !store.unlocked {
-                    GateView(ready: !showSplash)
-                } else if model.library.access == .granted {
+                if model.library.access == .granted {
                     HomeView(ready: !showSplash)
                 } else {
                     PermissionView(ready: !showSplash)
@@ -28,18 +23,6 @@ public struct RootView: View {
             }
         }
         .environment(model)
-        .environment(store)
-        .onChange(of: store.unlocked) { old, now in
-            if gated == nil { gated = !old }
-            if now {
-                Task {
-                    try? await Task.sleep(for: .milliseconds(1800))
-                    withAnimation(.easeInOut(duration: 0.45)) { gated = false }
-                }
-            } else {
-                gated = true
-            }
-        }
         .tint(Theme.b500)
         // Every screen starts on the orange hero, so the window asks for dark (white clock) while
         // the views themselves draw light.

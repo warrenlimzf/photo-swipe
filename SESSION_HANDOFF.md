@@ -1,6 +1,14 @@
 # Session handoff — stock-photo marketing shipped + mouse-wheel shake fixed (15 Oct 2026, late)
 
 
+> **16 Oct 2026, paywall built then parked: the app stays FREE (Warren's call: "doesn't create much economic value").**
+> bd0c806 added a US$1.99 lifetime unlock (StoreKit 2 `Store.swift`, intro + `PaywallView.swift`, `SwipeCore/Access.swift`
+> + tests, Xcode `.storekit` test file, optional `server/` webhook, `docs/payments.md` with the App Store Connect checklist for
+> his brother's shared account). Reverted in the next commit. To bring it back: `git revert <that revert commit>`.
+> Ideas he floated if it ever returns: a referral code that unlocks free, asked on the same screen as the price (no hint that
+> codes exist), and US$0.99 if 1.99 feels too dear. Nothing was released or installed; his phone still runs v1.7.2.
+
+
 > **15 Oct 2026 (~23:00), v1.7.2 album-rail fix (separate agent, a02faf7, release v1.7.2, installed on his iPhone):** the
 > rail's hold-to-reorder gesture swallowed every drag, so with 7+ albums the + was unreachable. Now a UIKit long-press that
 > gives up when the finger moves, so the rail scrolls; interrupted holds drop the emoji back; adding an album scrolls to the
